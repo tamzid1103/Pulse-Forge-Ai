@@ -29,7 +29,7 @@ The MIMII record lists a large total download size, and the individual fan archi
 | Folder Layout in Zip | `fan/{machine_id}/{condition}/{filename}.wav` (e.g. `fan/id_00/normal/00000000.wav`) |
 | Total Files in Archive | 5,563 total entries across 4 machine IDs (`id_00`, `id_02`, `id_04`, `id_06`) |
 | `id_00` File Counts | 1,011 normal files, 407 abnormal files |
-| Selected MVP Subset | 50 normal + 20 abnormal = 70 files (~175 MB) |
+| Selected MVP Subset | 35 normal + 15 abnormal = 50 files (~125 MB) |
 | Audio Format | WAV (WAVEX header, 16-bit PCM) |
 | Sample Rate | 16,000 Hz |
 | Channels | 8 channels (circular microphone array) |
