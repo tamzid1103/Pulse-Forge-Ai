@@ -1,0 +1,12 @@
+# Core MVP dependencies only. Resolve and pin exact versions after a clean install.
+numpy
+pandas
+scipy
+matplotlib
+librosa
+soundfile
+scikit-learn
+torch
+streamlit
+plotly
+pytest
