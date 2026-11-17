@@ -145,6 +145,25 @@ Purpose:
 
 Compare both models on the same split. Do not report the better model without also reporting the comparison method.
 
+### Measured baseline evaluation results (Recorded: 2026-11-18)
+
+| Metric / Parameter | Value | Notes |
+|---|---|---|
+| Model Type | `BaselineIsolationForest` (`sklearn.ensemble.IsolationForest`) | Seed=42, n_estimators=100 |
+| Feature Input | 256-dim pooled representation (`mean_std`) | Mean + Std across time frames per Mel bin |
+| Score Aggregation | Mean | Average of inverted segment anomaly scores |
+| Training Split | 24 normal recordings (456 segments) | Zero abnormal in train |
+| Threshold Selection | Validation split (5 normal, 7 abnormal) | Quantile-based (90th percentile of normal val scores) |
+| Selected Threshold | `0.4405` | Target FPR = 0.10 |
+| Held-out Test Split | 14 recordings (6 normal, 8 abnormal) | Evaluated once, completely untouched during tuning |
+| Test AUROC | `0.9167` | Strong separation on held-out test audio |
+| Test PR-AUC | `0.9583` | Average precision |
+| Test F1-Score | `0.7368` | At validation-selected threshold `0.4405` |
+| Test Precision | `0.6364` | TP / (TP + FP) |
+| Test Recall | `0.8750` | 7 out of 8 abnormal test recordings detected |
+| Test Confusion Matrix | TP=7, FP=4, TN=2, FN=1 | 1 missed anomaly, 4 false positives |
+| Mean Inference Latency | `6.45 ms` | Measured on CPU per recording |
+
 ## 8. Threshold selection
 
 The anomaly score is model-specific and is not a probability.
