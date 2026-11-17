@@ -90,6 +90,23 @@ class FeatureConfig:
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
+class BaselineConfig:
+    """Isolation Forest baseline model parameters."""
+
+    n_estimators: int = 100
+    max_samples: float | str = "auto"
+    contamination: float | str = "auto"
+    random_state: int = 42
+    # Feature pooling strategy: "mean_std" (mean and std across time per Mel band: 256 dims),
+    # "mean" (mean across time per Mel band: 128 dims), or "flatten" (flattened segments: 4096 dims)
+    pooling_strategy: str = "mean_std"
+    # Aggregation across segments for recording score: "mean", "max", "percentile_95"
+    score_aggregation: str = "mean"
+    # Target false-positive rate on validation normal samples for threshold selection
+    target_fpr: float = 0.10
+
+
+@dataclass(frozen=True)
 class ModelConfig:
     """Autoencoder and baseline model parameters."""
 
@@ -192,6 +209,7 @@ class AppConfig:
     audio: AudioConfig = field(default_factory=AudioConfig)
     features: FeatureConfig = field(default_factory=FeatureConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
+    baseline: BaselineConfig = field(default_factory=BaselineConfig)
     quality: QualityConfig = field(default_factory=QualityConfig)
     decision: DecisionConfig = field(default_factory=DecisionConfig)
     paths: PathConfig = field(default_factory=PathConfig)
