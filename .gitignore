@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# Testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Allow .gitkeep to preserve directory structure
+!.gitkeep
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Datasets and user uploads
+/data/*
+!/data/manifests/
+!/data/manifests/*
+dataset/
+datasets/
+uploads/
+tmp_uploads/
+*.wav
+*.flac
+*.mp3
+*.zip
+
+# Allow demo audio WAVs to be tracked (small, approved files only)
+!demo_audio/*.wav
+
+# Model artifacts and experiment outputs (track only if explicitly approved)
+/models/
+model_artifacts/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+/results/
+outputs/
+
+# Local database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

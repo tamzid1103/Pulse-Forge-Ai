@@ -1,0 +1,5 @@
+# Optional: install only if the team adds the FastAPI HTTP adapter.
+-r requirements.txt
+fastapi
+uvicorn
+python-multipart
