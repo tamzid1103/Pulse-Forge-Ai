@@ -145,6 +145,12 @@ class QualityConfig:
     # Minimum acceptable duration after decode (seconds)
     min_analysis_duration: float = 0.5
 
+    # Maximum acceptable duration after decode (seconds)
+    max_analysis_duration: float = 30.0
+
+    # DC bias magnitude above which a warning is issued
+    dc_offset_threshold: float = 0.1
+
 
 # ---------------------------------------------------------------------------
 # Decision policy

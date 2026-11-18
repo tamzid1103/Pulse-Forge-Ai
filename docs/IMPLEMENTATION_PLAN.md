@@ -168,16 +168,24 @@
 
 ### M5 — Signal quality, unfamiliarity, and decision policy
 
+**Status:** Completed (Verified across 112 passing unit & integration tests)
+
 **Objective:** Implement the trustworthiness differentiator.
 
 **Files:**
 
+- `src/schemas.py`
 - `src/quality.py`
 - `src/familiarity.py`
 - `src/thresholding.py`
 - `src/decision.py`
-- `src/schemas.py`
-- relevant unit tests
+- `scripts/calibrate_decision.py`
+- `tests/test_schemas.py`
+- `tests/test_quality.py`
+- `tests/test_thresholding.py`
+- `tests/test_familiarity.py`
+- `tests/test_decision.py`
+- `tests/test_end_to_end_decision.py`
 
 **Instructions:**
 

@@ -142,3 +142,17 @@ Approved by:
 - **Impact on scope:** Completes the core primary ML model for the hackathon MVP.
 - **Documents updated:** `docs/DATASET_AND_MODEL_GUIDE.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `src/config.py`.
 - **Approved by:** Antigravity (Implementation Agent).
+
+
+### Decision DEC-005: Signal Quality, Latent Embedding Familiarity, and 4-State Industrial Decision Policy
+- **Date:** 2026-11-19
+- **Question / change:** How should audio signal quality, latent domain familiarity, and model anomaly scores be combined to produce trustworthy, actionable industrial recommendations without making unfounded failure probability claims?
+- **Options considered:**
+  - (A) Single binary threshold on raw anomaly score, ignoring signal quality and out-of-domain inputs.
+  - (B) Soft heuristic probability estimate ("95% chance of bearing failure").
+  - (C) Deterministic multi-stage policy: Pre-inference Signal Quality verification (silence, clipping, duration, NaN) -> Latent Standardized Euclidean Familiarity assessment against normal training distribution -> Model Anomaly Detection -> 4 Explicit States (`normal`, `possible_anomaly`, `needs_review`, `invalid_input`).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Satisfies all requirements of `AGENTS.md` and `docs/IMPLEMENTATION_PLAN.md` (M5). Prevents silent failures on silent, digitally clipped, or domain-shifted audio by routing them to `needs_review`. Tested on 112 unit and integration tests with 100% pass rate.
+- **Impact on scope:** Establishes the core differentiator for PulseForge AI: trustworthy industrial screening with explicit quality/unfamiliarity communication.
+- **Documents updated:** `src/schemas.py`, `src/quality.py`, `src/familiarity.py`, `src/thresholding.py`, `src/decision.py`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/IMPLEMENTATION_PLAN.md`.
+- **Approved by:** Tamzidul & Antigravity (Implementation Team).
