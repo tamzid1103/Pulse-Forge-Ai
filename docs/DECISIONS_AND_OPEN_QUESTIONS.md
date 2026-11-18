@@ -117,8 +117,18 @@ Approved by:
 - **Date:** 2026-11-17
 - **Question / change:** Which MIMII fan archive, noise condition, and acquisition method should be used for the manageable MVP subset?
 - **Options considered:** (A) Download the full ~10 GB `6_dB_fan.zip`, (B) Use HTTP Range requests to extract a targeted 45-file subset directly from Zenodo, (C) Synthesize mock audio.
-- **Chosen option:** Option B (`6_dB_fan.zip`, machine `id_00`, 30 normal + 15 abnormal = 45 genuine files extracted via range requests).
-- **Reason / evidence:** Range requests allow fetching authentic 16 kHz 8-channel 10s recordings directly from the official Zenodo archive in ~2 minutes without downloading the full 10 GB. 45 genuine files provide a complete train/val/test split.
-- **Impact on scope:** Fully adheres to MVP rules; real industrial data, manageable size (~112 MB on disk).
+- **Chosen option:** Option B (`6_dB_fan.zip`, machine `id_00`, 35 normal + 15 abnormal = 50 genuine files extracted via range requests).
+- **Reason / evidence:** Range requests allow fetching authentic 16 kHz 8-channel 10s recordings directly from the official Zenodo archive in ~2 minutes without downloading the full 10 GB. 50 genuine files provide a complete train/val/test split.
+- **Impact on scope:** Fully adheres to MVP rules; real industrial data, manageable size (~125 MB on disk).
 - **Documents updated:** `docs/DATASET_AND_MODEL_GUIDE.md`, `docs/IMPLEMENTATION_PLAN.md`.
+- **Approved by:** Antigravity (Implementation Agent).
+
+### Decision DEC-003: Baseline Isolation Forest Feature Representation and Thresholding Policy
+- **Date:** 2026-11-18
+- **Question / change:** What feature representation, score orientation, and threshold selection method should be used for the M3 Isolation Forest baseline?
+- **Options considered:** (A) Flatten raw 4096-dim Mel frames, (B) Pool mean and std per Mel band across time frames ($2 \times 128 = 256$ dimensions per segment), (C) Single 128-dim mean vector per recording.
+- **Chosen option:** Option B (256-dimensional `mean_std` pooling across time frames per segment, mean score aggregation across segments, and quantile threshold derived on validation normal data at target FPR=0.10).
+- **Reason / evidence:** Inverted sign ensures higher score indicates higher anomaly (matching the upcoming Autoencoder convention). On the held-out test split, the baseline achieved 0.9167 AUROC, 0.9583 PR-AUC, and 0.875 Recall, establishing a solid, reproducible benchmark.
+- **Impact on scope:** Establishes the required benchmark model for M3 without any data leakage.
+- **Documents updated:** `docs/DATASET_AND_MODEL_GUIDE.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `src/config.py`.
 - **Approved by:** Antigravity (Implementation Agent).

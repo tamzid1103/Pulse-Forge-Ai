@@ -63,10 +63,18 @@ class RemoteSeekableFile(io.RawIOBase):
                 "Range": f"bytes={self.pos}-{self.pos + size - 1}",
             },
         )
-        with urllib.request.urlopen(req) as resp:
-            data = resp.read()
-        self.pos += len(data)
-        return data
+        for attempt in range(5):
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    data = resp.read()
+                self.pos += len(data)
+                return data
+            except Exception as e:
+                if attempt == 4:
+                    raise
+                logger.warning(f"Network error on range read (attempt {attempt + 1}/5): {e}. Retrying in 2s...")
+                time.sleep(2)
+        return b""
 
 
 def download_fan_subset(

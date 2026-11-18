@@ -29,7 +29,7 @@ The MIMII record lists a large total download size, and the individual fan archi
 | Folder Layout in Zip | `fan/{machine_id}/{condition}/{filename}.wav` (e.g. `fan/id_00/normal/00000000.wav`) |
 | Total Files in Archive | 5,563 total entries across 4 machine IDs (`id_00`, `id_02`, `id_04`, `id_06`) |
 | `id_00` File Counts | 1,011 normal files, 407 abnormal files |
-| Selected MVP Subset | 50 normal + 20 abnormal = 70 files (~175 MB) |
+| Selected MVP Subset | 35 normal + 15 abnormal = 50 files (~125 MB) |
 | Audio Format | WAV (WAVEX header, 16-bit PCM) |
 | Sample Rate | 16,000 Hz |
 | Channels | 8 channels (circular microphone array) |
@@ -144,6 +144,25 @@ Purpose:
 - provide a simpler fallback if the neural model is unstable.
 
 Compare both models on the same split. Do not report the better model without also reporting the comparison method.
+
+### Measured baseline evaluation results (Recorded: 2026-11-18)
+
+| Metric / Parameter | Value | Notes |
+|---|---|---|
+| Model Type | `BaselineIsolationForest` (`sklearn.ensemble.IsolationForest`) | Seed=42, n_estimators=100 |
+| Feature Input | 256-dim pooled representation (`mean_std`) | Mean + Std across time frames per Mel bin |
+| Score Aggregation | Mean | Average of inverted segment anomaly scores |
+| Training Split | 24 normal recordings (456 segments) | Zero abnormal in train |
+| Threshold Selection | Validation split (5 normal, 7 abnormal) | Quantile-based (90th percentile of normal val scores) |
+| Selected Threshold | `0.4405` | Target FPR = 0.10 |
+| Held-out Test Split | 14 recordings (6 normal, 8 abnormal) | Evaluated once, completely untouched during tuning |
+| Test AUROC | `0.9167` | Strong separation on held-out test audio |
+| Test PR-AUC | `0.9583` | Average precision |
+| Test F1-Score | `0.7368` | At validation-selected threshold `0.4405` |
+| Test Precision | `0.6364` | TP / (TP + FP) |
+| Test Recall | `0.8750` | 7 out of 8 abnormal test recordings detected |
+| Test Confusion Matrix | TP=7, FP=4, TN=2, FN=1 | 1 missed anomaly, 4 false positives |
+| Mean Inference Latency | `6.45 ms` | Measured on CPU per recording |
 
 ## 8. Threshold selection
 
