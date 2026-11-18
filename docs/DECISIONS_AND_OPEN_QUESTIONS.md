@@ -132,3 +132,13 @@ Approved by:
 - **Impact on scope:** Establishes the required benchmark model for M3 without any data leakage.
 - **Documents updated:** `docs/DATASET_AND_MODEL_GUIDE.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `src/config.py`.
 - **Approved by:** Antigravity (Implementation Agent).
+
+### Decision DEC-004: Primary Autoencoder Architecture, Training Strategy, and Comparative Benchmark
+- **Date:** 2026-11-18
+- **Question / change:** What PyTorch Autoencoder architecture, loss, and training strategy should be implemented for Milestone M4?
+- **Options considered:** (A) Conv2D Autoencoder, (B) Fully-connected symmetric dense Autoencoder (4096 -> 512 -> 128 -> 64 -> 32 -> 64 -> 128 -> 512 -> 4096) with BatchNorm and LeakyReLU, (C) Linear PCA / shallow projection.
+- **Chosen option:** Option B (Fully-connected symmetric dense Autoencoder with MSE loss, Adam optimizer with weight decay $1e-5$, and early stopping on validation loss).
+- **Reason / evidence:** The symmetric dense Autoencoder converges smoothly in 8 seconds on CPU, achieving 0.9375 AUROC and 0.8571 F1-Score on the held-out test split, significantly outperforming the Isolation Forest baseline (F1 +0.1203, with 0 false positives). The 32-dimensional latent bottleneck also provides compact embeddings for M5 unfamiliarity checks.
+- **Impact on scope:** Completes the core primary ML model for the hackathon MVP.
+- **Documents updated:** `docs/DATASET_AND_MODEL_GUIDE.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `src/config.py`.
+- **Approved by:** Antigravity (Implementation Agent).

@@ -133,6 +133,23 @@ The hackathon concept is anomaly detection from normal operation patterns. An Au
 
 Do not overfit the design to the test set. Record the chosen configuration in `model_config.json` and training logs.
 
+### Measured Autoencoder evaluation results (Recorded: 2026-11-18)
+
+| Metric / Parameter | Value | Notes |
+|---|---|---|
+| Model Architecture | `AcousticAutoencoder` (PyTorch) | Dense symmetric: 4096 -> 512 -> 128 -> 64 -> 32 (latent) -> 4096 |
+| Training Epochs | 46 epochs | Early stopping triggered (best val loss: 0.8401, training duration: 8.36s) |
+| Score Aggregation | Mean | Mean MSE reconstruction error across all 19 segments per recording |
+| Selected Threshold ($\tau$) | `0.9372` | 90th percentile of normal validation scores (target FPR = 0.10) |
+| Test AUROC | `0.9375` | +0.0208 improvement over baseline Isolation Forest |
+| Test PR-AUC | `0.9659` | Precision-Recall AUC on held-out test split |
+| Test F1-Score | `0.8571` | +0.1203 improvement over baseline (0.7368) |
+| Test Precision | `1.0000` | Zero false positives on test normal audio ($\text{FP}=0$) |
+| Test Recall | `0.7500` | 6 of 8 abnormal test recordings detected ($\text{TP}=6, \text{FN}=2$) |
+| Test FPR | `0.0000` | Zero false alarms at selected threshold |
+| Confusion Matrix | $\text{TP}=6, \text{FP}=0, \text{TN}=6, \text{FN}=2$ | Normal correctly passed: 6/6 |
+| Mean Inference Latency | `9.72 ms` | Measured on standard CPU per 10s audio clip |
+
 ## 7. Baseline: Isolation Forest
 
 Train a simpler anomaly detector on a documented feature vector or pooled representation. Possible inputs include aggregated spectral statistics or flattened/reduced log-Mel features. Choose a dimensionally appropriate representation and keep preprocessing consistent.
