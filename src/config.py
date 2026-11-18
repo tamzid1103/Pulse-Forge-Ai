@@ -108,11 +108,14 @@ class BaselineConfig:
 
 @dataclass(frozen=True)
 class ModelConfig:
-    """Autoencoder and baseline model parameters."""
+    """Autoencoder model parameters."""
 
-    # Autoencoder
+    # Autoencoder architecture
+    input_dim: int = 4096  # 128 Mel bins * 32 time frames
+    hidden_dims: tuple[int, ...] = (512, 128, 64)
     latent_dim: int = 32
     learning_rate: float = 1e-3
+    weight_decay: float = 1e-5
     batch_size: int = 64
     epochs: int = 100
     early_stopping_patience: int = 10
@@ -120,6 +123,9 @@ class ModelConfig:
 
     # Score aggregation: "mean", "max", "percentile_95"
     score_aggregation: str = "mean"
+
+    # Target false-positive rate on validation normal samples for threshold selection
+    target_fpr: float = 0.10
 
 
 # ---------------------------------------------------------------------------
