@@ -91,6 +91,56 @@ class PulseForgeService:
                 logger.error("Failed to load Familiarity from %s: %s", fam_path, e)
 
     @property
+    def detector(self) -> AutoencoderDetector | None:
+        """Loaded AutoencoderDetector instance."""
+        return self._detector
+
+    @property
+    def scaler(self) -> FeatureScaler | None:
+        """Loaded FeatureScaler instance."""
+        return self._scaler
+
+    @property
+    def familiarity(self) -> LatentFamiliarityEstimator | None:
+        """Loaded LatentFamiliarityEstimator instance."""
+        return self._familiarity
+
+    def get_history(
+        self, limit: int = 10, machine_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Fetch recent analysis runs from the audit store."""
+        return self.store.get_recent_runs(limit=limit, machine_id=machine_id)
+
+    def get_summary_stats(self) -> dict[str, Any]:
+        """Fetch aggregated operational summary stats."""
+        return self.store.get_summary_stats()
+
+    def clear_history(self) -> None:
+        """Purge all stored audit records."""
+        self.store.clear_history()
+
+    def analyze_bytes(
+        self,
+        audio_bytes: bytes,
+        filename: str = "audio.wav",
+        machine_id: str = "id_00",
+        machine_type: str = "fan",
+        source_kind: str = "uploaded",
+        record_to_db: bool = True,
+        operator_note: str = "",
+    ) -> tuple[AnalysisResult, AudioSignal | None, str | None]:
+        """Convenience alias for analyze_audio with raw bytes."""
+        return self.analyze_audio(
+            source=audio_bytes,
+            filename=filename,
+            machine_id=machine_id,
+            machine_type=machine_type,
+            source_kind=source_kind,
+            record_to_db=record_to_db,
+            operator_note=operator_note,
+        )
+
+    @property
     def is_model_ready(self) -> bool:
         """Return True if all ML model artifacts are loaded and ready for inference."""
         return (
