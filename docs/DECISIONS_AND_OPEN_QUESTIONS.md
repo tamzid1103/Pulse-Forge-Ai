@@ -156,3 +156,39 @@ Approved by:
 - **Impact on scope:** Establishes the core differentiator for PulseForge AI: trustworthy industrial screening with explicit quality/unfamiliarity communication.
 - **Documents updated:** `src/schemas.py`, `src/quality.py`, `src/familiarity.py`, `src/thresholding.py`, `src/decision.py`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/IMPLEMENTATION_PLAN.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
+
+
+### Decision DEC-006: CloudCamp BD 2026 Hackathon Strategy Alignment & Architecture Expansion
+- **Date:** 2026-11-19
+- **Question / change:** How should the project architecture expand beyond the baseline MVP to maximize score on the official CloudCamp BD International AI Builders Congress 2026 Pre-Judgment Auto-Scoring Rubric without compromising ML acoustic integrity?
+- **Options considered:**
+  - (A) Strict minimal MVP: Keep Streamlit-only, no database, no API, no MCP server, no LLM copilot (risks losing 60+ pre-judgment rubric points).
+  - (B) Replace ML pipeline with an LLM: Use an LLM for acoustic diagnosis (violates physical acoustic principles and AGENTS.md rules).
+  - (C) Layered Architecture Expansion: Preserve the core acoustic ML pipeline (Autoencoder + Baseline + Quality + Familiarity + Decision Engine) as the deterministic **Predictive Plant** engine. Build on top of it:
+    1. Reusable Service Layer (`src/service.py`) and SQLite audit persistence (`src/persistence.py`).
+    2. FastAPI adapter (`src/api.py`) powering dual frontends: local Streamlit (`app/dashboard.py`) and modern React dashboard via Lovable MCP.
+    3. Custom PulseForge MCP Server (`src/mcp_server.py`) exposing acoustic diagnosis tools (capturing 12 MCP points).
+    4. Factory Brain Copilot (`src/copilot.py`) utilizing semantic RAG on fan maintenance SOPs and local Ollama execution (capturing 26+ points for RAG & Local Models).
+    5. Cloudflare Tunneling (`scripts/run_tunnel.sh`) for live internet demo access (capturing 6 points).
+    6. Dedicated Submission Dossier & Zero to Launch Single Master Prompt (`docs/CLOUDCAMP_SUBMISSION_DOSSIER.md` & `docs/ZERO_TO_LAUNCH_MASTER_PROMPT.md`).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Directly addresses every scoring category in the CloudCamp knowledge base (`cloudcamp://knowledge-base`) while preserving complete scientific integrity, determinism, and reproducibility of the fan acoustic anomaly detection model.
+- **Impact on scope:** Expands Milestones M6–M10 with structured, modular components.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`, `docs/API_DOCUMENTATION.md`, `docs/DATABASE_SCHEMA.md`.
+- **Approved by:** Tamzidul & Antigravity (Implementation Team).
+
+
+### Decision DEC-007: Two-Phase Hackathon Execution Strategy (Preliminary Video Sprint vs Final Round Expansion)
+- **Date:** 2026-11-19
+- **Question / change:** How should the engineering schedule be prioritized given that the Preliminary Submission deadline is tomorrow (Nov 20), requiring a video demonstration of working software, while the final round occurs two weeks later?
+- **Options considered:**
+  - (A) Attempt full cloud deployment, Ollama setup, and Lovable React build all in one night (high risk of partial implementations or broken recording setup before tomorrow morning).
+  - (B) Submit slides only without running software (fails live software demonstration requirement).
+  - (C) Two-Phase Staged Sprint:
+    - **Phase 1 (Tonight / Tomorrow Morning):** Build and lock the local vertical slice: unified application service (`src/service.py`), SQLite inspection history (`src/persistence.py`), 5 curated demo audio scenarios (`demo_audio/`), and an interactive Streamlit operator UI (`app/dashboard.py`). Deliver an exact 2-minute video script (`docs/PRELIMINARY_VIDEO_SCRIPT.md`) and pre-filled submission dossier (`docs/PRELIMINARY_SUBMISSION_DOSSIER.md`).
+    - **Phase 2 (Next 2 Weeks for Finals):** Expand with Factory Brain Copilot (Ollama/RAG), custom MCP server, Lovable React UI, public cloud hosting, and multi-machine fleet extensions (Milestones M8–M13).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Guarantees an impressive, zero-risk, working demonstration for the preliminary video tomorrow morning, while creating an expanded roadmap for the 2-week final round.
+- **Impact on scope:** Establishes Phase 1 (M6–M7) for preliminary submission and Phase 2 (M8–M13) for finals.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/DEMO_GUIDE.md`.
+- **Approved by:** Tamzidul & Antigravity (Implementation Team).

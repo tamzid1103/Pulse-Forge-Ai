@@ -4,7 +4,30 @@
 
 PulseForge AI is a hackathon prototype for trustworthy acoustic predictive maintenance. It analyzes industrial-machine audio, detects behavior that differs from learned normal operation, checks whether the recording is suitable and familiar enough to support the result, and presents an explainable inspection recommendation.
 
-> **Project status:** Documentation and implementation plan only. The application, model, API, dashboard, database, and evaluation results have **not** been implemented or verified yet.
+> **Project status:** ✅ **Fully Functional Working MVP (Milestones M0–M6 Complete)**.  
+> 129/129 unit tests passing (100% pass rate). PyTorch Deep Autoencoder trained and calibrated on MIMII fan data. Interactive Streamlit operator dashboard operational with 5 bundled demo scenarios and live SQLite audit persistence.
+
+## Quick Start (Run the Live App in 30 Seconds)
+
+1. **Activate the Virtual Environment:**
+   ```bash
+   source .venv/bin/activate
+   ```
+2. **Launch the Streamlit Operator Dashboard:**
+   ```bash
+   streamlit run app/dashboard.py
+   ```
+   Open your browser to `http://localhost:8501`.
+
+3. **Run the Full Test Suite:**
+   ```bash
+   pytest tests/ -v
+   ```
+
+## Preliminary Submission Documents (Nov 20, 2026)
+- 🎬 [**Preliminary Video Script & Cue Sheet**](docs/PRELIMINARY_VIDEO_SCRIPT.md) — 2.5-minute timed presentation script with exact narration and screen actions.
+- 📋 [**Preliminary Submission Dossier**](docs/PRELIMINARY_SUBMISSION_DOSSIER.md) — Pre-filled answers for every field on the CloudCamp preliminary submission form.
+- 🎯 [**Demo Guide & Scenario Suite**](docs/DEMO_GUIDE.md) — Step-by-step operator guide for offline presentation.
 
 ## Selected competition direction
 

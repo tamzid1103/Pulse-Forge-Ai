@@ -1,16 +1,15 @@
-# Database Schema
+# Database Schema & Metadata Audit Trail
 
-## 1. MVP decision: no database required
+## 1. Storage strategy: Embedded SQLite Audit Store
 
-The first MVP can work without a database. A user uploads one recording, receives a result, and can download or screenshot the result if needed. This minimizes setup and failure points during the hackathon.
+In accordance with Milestone M6 and the CloudCamp BD Data Lifecycle standards, PulseForge AI implements an embedded **SQLite metadata audit store** (`src/persistence.py`).
 
-Do not add a database before the model pipeline and dashboard work end to end.
+Key architectural principles:
+- **Zero Configuration:** Embedded local database (`data/pulseforge.db`), requiring zero database server setup.
+- **Privacy & Safety:** Strictly persists **analysis metadata, scores, and timestamps only**. Raw audio is never persisted by default.
+- **Unified Interface:** Used by the central service (`src/service.py`) to power both Streamlit and FastAPI `/api/v1/history` endpoints.
 
-## 2. Optional SQLite history
-
-If time permits, add SQLite to store **analysis metadata only**. Do not store raw audio by default. Keep the database local and outside version control.
-
-### Proposed table: `analysis_runs`
+## 2. Table: `analysis_runs`
 
 | Column | Type | Required | Description |
 |---|---|---:|---|

@@ -1,0 +1,9 @@
+{
+  "model_type": "LatentFamiliarityEstimator",
+  "method": "latent_standardized_euclidean",
+  "latent_dim": 32,
+  "num_training_samples": 456,
+  "threshold": 9.254881005799476,
+  "target_fpr": 0.05,
+  "autoencoder_checkpoint": "autoencoder_fan_id_00.pt"
+}

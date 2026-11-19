@@ -1,0 +1,23 @@
+{
+  "model_type": "AcousticAutoencoder",
+  "threshold": 0.8904480934143066,
+  "architecture": {
+    "input_dim": 4096,
+    "hidden_dims": [
+      512,
+      128,
+      64
+    ],
+    "latent_dim": 32
+  },
+  "training_config": {
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "epochs": 100,
+    "early_stopping_patience": 10,
+    "seed": 42,
+    "score_aggregation": "mean",
+    "target_fpr": 0.1
+  }
+}
