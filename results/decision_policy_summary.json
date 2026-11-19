@@ -1,0 +1,155 @@
+{
+  "timestamp": "2026-11-19 19:29:09",
+  "familiarity_threshold": 9.254881005799476,
+  "autoencoder_threshold": 0.8904480934143066,
+  "test_evaluations": [
+    {
+      "recording_id": "fan_id_00_abnormal_00000007",
+      "ground_truth": "abnormal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.7638,
+      "familiarity_score": 3.3125,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000008",
+      "ground_truth": "abnormal",
+      "decision_status": "needs_review",
+      "status_label": "Acoustic Pattern Needs Human Review",
+      "anomaly_score": 1.2067,
+      "familiarity_score": 12.917,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000009",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 1.2245,
+      "familiarity_score": 4.1858,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000010",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 1.2518,
+      "familiarity_score": 3.8167,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000011",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 1.2694,
+      "familiarity_score": 3.8776,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000012",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 0.9379,
+      "familiarity_score": 5.4007,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000013",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 1.3137,
+      "familiarity_score": 3.9085,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_abnormal_00000014",
+      "ground_truth": "abnormal",
+      "decision_status": "possible_anomaly",
+      "status_label": "Possible Acoustic Anomaly Detected",
+      "anomaly_score": 1.0051,
+      "familiarity_score": 6.668,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000029",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.8309,
+      "familiarity_score": 4.7416,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000030",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.642,
+      "familiarity_score": 7.3435,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000031",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.605,
+      "familiarity_score": 3.302,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000032",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.6632,
+      "familiarity_score": 3.4872,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000033",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.8898,
+      "familiarity_score": 4.7108,
+      "quality_passed": true
+    },
+    {
+      "recording_id": "fan_id_00_normal_00000034",
+      "ground_truth": "normal",
+      "decision_status": "normal",
+      "status_label": "Normal Acoustic Pattern",
+      "anomaly_score": 0.8378,
+      "familiarity_score": 4.6577,
+      "quality_passed": true
+    }
+  ],
+  "stress_evaluations": {
+    "silent_input": {
+      "expected": "needs_review",
+      "actual": "needs_review",
+      "status_label": "Signal Quality Rejected \u2014 Needs Review",
+      "passed": true
+    },
+    "clipped_input": {
+      "expected": "needs_review",
+      "actual": "needs_review",
+      "status_label": "Signal Quality Rejected \u2014 Needs Review",
+      "passed": true
+    },
+    "domain_shifted_noise": {
+      "expected": "needs_review",
+      "actual": "needs_review",
+      "status_label": "Acoustic Pattern Needs Human Review",
+      "passed": true,
+      "familiarity_score": 99.4579,
+      "familiarity_threshold": 9.2549
+    }
+  }
+}

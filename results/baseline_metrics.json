@@ -1,0 +1,39 @@
+{
+  "model_type": "BaselineIsolationForest",
+  "timestamp": "2026-11-19 02:50:33",
+  "machine_type": "fan",
+  "machine_id": "id_00",
+  "noise_condition": "6_dB",
+  "split_counts": {
+    "train": 24,
+    "val_normal": 5,
+    "val_abnormal": 7,
+    "test_normal": 6,
+    "test_abnormal": 8,
+    "total_test": 14
+  },
+  "config": {
+    "n_estimators": 100,
+    "pooling_strategy": "mean_std",
+    "score_aggregation": "mean",
+    "target_fpr": 0.1,
+    "random_state": 42,
+    "feature_dim": 256
+  },
+  "threshold": 0.4405,
+  "test_metrics": {
+    "auroc": 0.9167,
+    "pr_auc": 0.9583,
+    "f1_score": 0.7368,
+    "precision": 0.6364,
+    "recall": 0.875,
+    "false_positive_rate": 0.6667,
+    "confusion_matrix": {
+      "true_positive": 7,
+      "false_positive": 4,
+      "true_negative": 2,
+      "false_negative": 1
+    },
+    "mean_inference_latency_ms": 14.09
+  }
+}

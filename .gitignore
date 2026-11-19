@@ -52,7 +52,10 @@ tmp_uploads/
 !model_artifacts/*.pt
 !model_artifacts/*.joblib
 !model_artifacts/*.json
-/results/
+# Local results and plots (allow benchmark plots for Streamlit dashboard)
+!/results/
+!/results/*
+!/results/plots/*
 outputs/
 
 # Local database
