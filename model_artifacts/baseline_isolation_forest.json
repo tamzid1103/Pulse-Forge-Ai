@@ -1,0 +1,14 @@
+{
+  "model_type": "IsolationForest",
+  "threshold": 0.44050949811935425,
+  "feature_dim": 256,
+  "config": {
+    "n_estimators": 100,
+    "max_samples": "auto",
+    "contamination": "auto",
+    "random_state": 42,
+    "pooling_strategy": "mean_std",
+    "score_aggregation": "mean",
+    "target_fpr": 0.1
+  }
+}

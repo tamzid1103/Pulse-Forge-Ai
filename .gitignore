@@ -43,11 +43,15 @@ tmp_uploads/
 
 # Model artifacts and experiment outputs (track only if explicitly approved)
 /models/
-model_artifacts/
-*.pt
 *.pth
 *.ckpt
 *.onnx
+
+# Allow trained MVP model artifacts for deployment
+!model_artifacts/*
+!model_artifacts/*.pt
+!model_artifacts/*.joblib
+!model_artifacts/*.json
 /results/
 outputs/
 
