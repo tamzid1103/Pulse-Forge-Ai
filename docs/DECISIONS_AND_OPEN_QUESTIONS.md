@@ -176,3 +176,19 @@ Approved by:
 - **Impact on scope:** Expands Milestones M6–M10 with structured, modular components.
 - **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`, `docs/API_DOCUMENTATION.md`, `docs/DATABASE_SCHEMA.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
+
+
+### Decision DEC-007: Two-Phase Hackathon Execution Strategy (Preliminary Video Sprint vs Final Round Expansion)
+- **Date:** 2026-11-19
+- **Question / change:** How should the engineering schedule be prioritized given that the Preliminary Submission deadline is tomorrow (Nov 20), requiring a video demonstration of working software, while the final round occurs two weeks later?
+- **Options considered:**
+  - (A) Attempt full cloud deployment, Ollama setup, and Lovable React build all in one night (high risk of partial implementations or broken recording setup before tomorrow morning).
+  - (B) Submit slides only without running software (fails live software demonstration requirement).
+  - (C) Two-Phase Staged Sprint:
+    - **Phase 1 (Tonight / Tomorrow Morning):** Build and lock the local vertical slice: unified application service (`src/service.py`), SQLite inspection history (`src/persistence.py`), 5 curated demo audio scenarios (`demo_audio/`), and an interactive Streamlit operator UI (`app/dashboard.py`). Deliver an exact 2-minute video script (`docs/PRELIMINARY_VIDEO_SCRIPT.md`) and pre-filled submission dossier (`docs/PRELIMINARY_SUBMISSION_DOSSIER.md`).
+    - **Phase 2 (Next 2 Weeks for Finals):** Expand with Factory Brain Copilot (Ollama/RAG), custom MCP server, Lovable React UI, public cloud hosting, and multi-machine fleet extensions (Milestones M8–M13).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Guarantees an impressive, zero-risk, working demonstration for the preliminary video tomorrow morning, while creating an expanded roadmap for the 2-week final round.
+- **Impact on scope:** Establishes Phase 1 (M6–M7) for preliminary submission and Phase 2 (M8–M13) for finals.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/DEMO_GUIDE.md`.
+- **Approved by:** Tamzidul & Antigravity (Implementation Team).

@@ -202,160 +202,169 @@
 
 **Acceptance criteria:** all decision paths are deterministic and unit-tested; poor/unfamiliar inputs cannot silently appear as normal.
 
-### M6 — Service layer, SQLite persistence, dual frontend (Streamlit + Lovable), & public tunneling
+## 3. Two-phase sprint structure (Preliminary submission vs. Final round)
 
-**Status:** Ready to Implement
+To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring full-score alignment with the CloudCamp BD competition rubrics, the roadmap is organized into two distinct phases:
+- **Phase 1 (Tonight / Tomorrow Morning):** Deliver a rock-solid, fully functional, beautiful local product slice (Streamlit + SQLite + 5 preloaded demo scenarios) and an airtight video recording script so Tamzid can record the 2-minute video demo and submit on the portal tomorrow morning.
+- **Phase 2 (Next 2 Weeks for Finals):** Expand the platform with advanced agentic RAG (Ollama), custom MCP server, Lovable React UI, public cloud deployment, and multi-machine industrial support.
 
-**Objective:** Create the unified application service, persistent audit history, FastAPI backend, local Streamlit dashboard, Lovable React UI, and secure public tunneling to fulfill the Live Demo requirement.
+---
+
+### PHASE 1: PRELIMINARY SUBMISSION SPRINT (TONIGHT & TOMORROW MORNING)
+
+### M6 — End-to-end application service, SQLite audit history, & interactive Streamlit dashboard
+
+**Status:** Ready to Implement (Tonight's Priority)
+
+**Objective:** Create the unified application service, local embedded SQLite metadata history, pre-packaged demo scenarios, and an interactive, executive-grade Streamlit dashboard for tomorrow morning's video demo recording.
 
 **Files:**
 
 - `src/service.py`
 - `src/persistence.py`
-- `src/api.py`
 - `app/dashboard.py`
-- `scripts/run_tunnel.sh`
+- `demo_audio/` (5 curated, representative audio files)
 - `tests/test_service.py`
 - `tests/test_persistence.py`
-- `tests/test_api.py`
 
 **Instructions:**
 
 1. Implement `src/service.py`: centralized application entrypoint coordinating audio decoding, signal quality verification, feature extraction, autoencoder scoring, familiarity checking, and decision policy.
-2. Implement `src/persistence.py`: local SQLite metadata history logging all `analysis_runs` according to `docs/DATABASE_SCHEMA.md` (no raw audio stored).
-3. Implement `src/api.py`: FastAPI application providing `GET /health`, `POST /api/v1/analyze`, and `GET /api/v1/history`.
-4. Build `app/dashboard.py`: Streamlit operator interface with waveform/spectrogram rendering, live audio playback, preloaded demo selectors, and 4-state visual indicators.
-5. Connect Lovable MCP to generate the modern React industrial web app communicating with the FastAPI backend.
-6. Provide `scripts/run_tunnel.sh` to publish the application securely to the internet via Cloudflare Tunnel (`cloudflared`) or ngrok (unlocking 6 rubric points for Live Demo URL and Tunneling notes).
+2. Implement `src/persistence.py`: local SQLite metadata history logging all `analysis_runs` according to `docs/DATABASE_SCHEMA.md` (metadata only; no raw audio stored).
+3. Bundle 5 curated demo audio clips in `demo_audio/`:
+   - `01_normal_fan.wav` (Expected: NORMAL — Green status)
+   - `02_bearing_anomaly.wav` (Expected: POSSIBLE_ANOMALY — Red status)
+   - `03_silent_sensor_failure.wav` (Expected: NEEDS_REVIEW — Amber status)
+   - `04_clipped_sensor_saturation.wav` (Expected: NEEDS_REVIEW — Amber status)
+   - `05_unfamiliar_operating_noise.wav` (Expected: NEEDS_REVIEW — Amber status)
+4. Build `app/dashboard.py`:
+   - Clean industrial aesthetics with plant equipment metadata (`fan_id_00`).
+   - 1-Click Preloaded Demo Selector (select demo scenario instantly without browsing files during video recording).
+   - Audio playback player (hear the fan sound directly in the browser).
+   - Dynamic Waveform and Log-Mel Spectrogram visualizers.
+   - Anomaly Score vs. Baseline Threshold bar comparison.
+   - Latent Familiarity distance gauge.
+   - Prominent 4-state outcome badge with actionable maintenance recommendations.
+   - SQLite-backed Recent Inspection History table.
 
-**Testing:** Unit tests for service pipeline, SQLite schema CRUD, FastAPI endpoint status codes/validation, and tunnel scripts.
+**Testing:** Unit tests for service pipeline, SQLite schema CRUD, and demo scenario verification.
 
-**Expected output:** Fully runnable local Streamlit app, active FastAPI backend, and public live tunnel URL.
+**Expected output:** Fully runnable, visually impressive local Streamlit app with zero external network reliance.
 
-**Acceptance criteria:** One-command startup for both Streamlit and FastAPI; SQLite logs metadata accurately; public tunnel renders the application over HTTPS.
+**Acceptance criteria:** One-command launch (`streamlit run app/dashboard.py`); all 5 demo scenarios produce their exact expected status; SQLite logs inspection runs.
 
 ---
 
-### M7 — PulseForge custom MCP server & Factory Brain Copilot (Semantic RAG + Ollama)
+### M7 — Preliminary submission dossier & video recording script
 
-**Status:** Planned
+**Status:** Ready to Implement (Tonight's Priority)
 
-**Objective:** Build a custom Model Context Protocol (MCP) server and an agentic Factory Brain Copilot to maximize CloudCamp AI Stack & MCP category points (up to 38 points).
+**Objective:** Deliver an exact, timed video recording script and complete, pre-filled submission text for the CloudCamp portal.
+
+**Files:**
+
+- `docs/PRELIMINARY_VIDEO_SCRIPT.md`
+- `docs/PRELIMINARY_SUBMISSION_DOSSIER.md`
+- `docs/DEMO_GUIDE.md` (updates)
+
+**Instructions:**
+
+1. Author `docs/PRELIMINARY_VIDEO_SCRIPT.md`:
+   - Timed 2–3 minute click-by-click narration script.
+   - Opening hook (problem of industrial downtime & noisy false alarms).
+   - Live software walkthrough (clicking the preloaded scenarios in Streamlit).
+   - Technical highlight (MIMII dataset, PyTorch Autoencoder, Signal Quality, Latent Familiarity, Trustworthiness Differentiator).
+   - Closing pitch on the Factory Brain vision and roadmap.
+2. Author `docs/PRELIMINARY_SUBMISSION_DOSSIER.md`:
+   - Complete, audited text answers for every form field on the CloudCamp portal (Project Title, Elevator Pitch, Problem, Solution, AI Architecture, Dataset Attribution, GitHub URL).
+
+**Expected output:** Ready-to-record video script and ready-to-paste submission dossier.
+
+**Acceptance criteria:** Video script timed under 3 minutes; all submission answers exceed character minimums.
+
+---
+
+### PHASE 2: FINAL ROUND PRODUCTION & ADVANCED EXPANSION (NEXT 2 WEEKS)
+
+### M8 — Factory Brain Copilot (Contextual RAG & local Ollama integration)
+
+**Status:** Planned (Final Round)
+
+**Objective:** Add an agentic advisory layer using contextual RAG on industrial fan manuals and local Ollama execution (`llama3.2` / `deepseek-r1`) to auto-generate operator work orders and inspection tickets.
+
+**Files:**
+
+- `src/copilot.py`
+- `data/knowledge_base/fan_maintenance_sop.md`
+- `data/knowledge_base/iso_10816_acoustic_standards.md`
+- `tests/test_copilot.py`
+
+---
+
+### M9 — PulseForge custom Model Context Protocol (MCP) server
+
+**Status:** Planned (Final Round)
+
+**Objective:** Build a custom MCP server (`src/mcp_server.py`) exposing PulseForge tools (`analyze_fan_audio`, `inspect_signal_quality`, `get_machine_health_status`) to AI assistants (Antigravity, Claude, Cursor) over Stdio and SSE transports.
 
 **Files:**
 
 - `src/mcp_server.py`
-- `src/copilot.py`
-- `data/knowledge_base/fan_maintenance_sop.md`
-- `data/knowledge_base/iso_10816_acoustic_standards.md`
 - `tests/test_mcp_server.py`
-- `tests/test_copilot.py`
-
-**Instructions:**
-
-1. Build `src/mcp_server.py`: Custom MCP Server exposing PulseForge AI tools (`analyze_fan_audio`, `inspect_signal_quality`, `get_machine_status`) and resources (`pulseforge://fan-manifest`, `pulseforge://latest-telemetry`) over Stdio and Streamable HTTP/SSE.
-2. Build `src/copilot.py`: Contextual RAG copilot that loads industrial fan maintenance SOPs and ISO standards using semantic chunking.
-3. Integrate local model execution with Ollama (e.g. `llama3.2`, `deepseek-r1`) and cloud fallback to generate structured work orders and operator action checklists when an anomaly or review status is detected.
-4. Keep the core acoustic detector 100% deterministic: the copilot acts strictly as a downstream industrial advisory agent, never altering the measured acoustic score.
-
-**Testing:** Verify MCP tool invocation via JSON-RPC; test RAG retrieval precision; test copilot work order generation across normal, anomalous, and review states.
-
-**Expected output:** Live custom MCP server and working agentic Factory Brain copilot.
-
-**Acceptance criteria:** MCP server passes JSON-RPC `tools/list` and `tools/call`; copilot retrieves relevant SOP sections within 2 seconds.
 
 ---
 
-### M8 — Evaluation benchmark suite, offline demo package, & diagnostic plots
+### M10 — Lovable modern React industrial web dashboard
 
-**Status:** Planned
+**Status:** Planned (Final Round)
 
-**Objective:** Verify model behavior, latency, and prepare a reliable offline demonstration package.
+**Objective:** Export and polish the modern React + Vite + Tailwind CSS industrial dashboard from Lovable, integrating it with the FastAPI backend (`src/api.py`) for both localhost and web access.
 
 **Files:**
 
-- `results/evaluation_report.json`
-- `results/plots/roc_comparison.png`
-- `results/plots/reconstruction_error_distribution.png`
-- `results/plots/autoencoder_loss_curve.png`
-- `demo_audio/` (5 curated, representative audio files)
-- `tests/test_demo_audio.py`
-
-**Instructions:**
-
-1. Execute `scripts/evaluate.py` to produce final benchmark metrics comparing Baseline vs Autoencoder.
-2. Generate all diagnostic comparison curves and distribution plots in `results/plots/`.
-3. Bundle 5 curated demo audio clips in `demo_audio/`:
-   - `01_normal_baseline.wav` (Expected: normal)
-   - `02_bearing_anomaly.wav` (Expected: possible_anomaly)
-   - `03_silent_sensor_failure.wav` (Expected: needs_review)
-   - `04_clipped_sensor_saturation.wav` (Expected: needs_review)
-   - `05_out_of_domain_noise.wav` (Expected: needs_review)
-4. Record CPU inference latency benchmarks (target: < 100 ms per 10s audio clip).
-
-**Testing:** Automated test verifying that all 5 demo audio files produce their exact documented status without network access.
-
-**Expected output:** Complete offline demo kit and benchmark report.
-
-**Acceptance criteria:** Zero-network demo verification; reproducible evaluation numbers.
+- `src/api.py`
+- `frontend/` (React/Vite app)
+- `tests/test_api.py`
 
 ---
 
-### M9 — CloudCamp submission dossier & Zero to Launch single master prompt
+### M11 — Production cloud deployment & public live hosting
 
-**Status:** Planned
+**Status:** Planned (Final Round)
 
-**Objective:** Author the single master prompt and compile the complete submission dossier to achieve 100% points on the CloudCamp Pre-Judgment Auto-Scoring Rubric.
+**Objective:** Deploy the full-stack system online: FastAPI backend on Render/Railway, React frontend on Vercel/Netlify, and automated Cloudflare Tunneling (`scripts/run_tunnel.sh`).
+
+**Files:**
+
+- `deploy/Dockerfile`
+- `docker-compose.yml`
+- `scripts/run_tunnel.sh`
+
+---
+
+### M12 — Multi-machine industrial fleet expansion
+
+**Status:** Planned (Final Round)
+
+**Objective:** Expand dataset and model registry beyond fans to include MIMII pumps, valves, and slide rails with multi-machine fleet monitoring.
+
+**Files:**
+
+- `src/models/registry.py`
+- `data/manifests/fleet_manifest.csv`
+
+---
+
+### M13 — Zero to Launch single master prompt & final pitch deck
+
+**Status:** Planned (Final Round)
+
+**Objective:** Author the canonical single master prompt covering all 8 competition modules and prepare the final presentation slide deck.
 
 **Files:**
 
 - `docs/ZERO_TO_LAUNCH_MASTER_PROMPT.md`
-- `docs/CLOUDCAMP_SUBMISSION_DOSSIER.md`
 - `docs/PITCH_DECK.md`
-
-**Instructions:**
-
-1. Author `docs/ZERO_TO_LAUNCH_MASTER_PROMPT.md`: A single comprehensive master prompt adhering to the "ONE PROMPT ONLY" challenge rule, covering all 8 required modules:
-   - Core Product & AI Instructions
-   - Data Architecture & Pipelines
-   - Admin Module & Access Controls
-   - Security & Guardrails
-   - Documentation Module
-   - Audit Reporting & Observability
-   - Presentation & Pitch Deck Outline
-   - Deployment & Infrastructure Requirements
-2. Author `docs/CLOUDCAMP_SUBMISSION_DOSSIER.md`: Pre-filled text and link answers for every form field on the CloudCamp submission portal, audited against character minimums (80+ chars for notes, 50+ chars for token optimization, 100+ chars for AI-DLC).
-3. Outline the 10-slide pitch deck structure in `docs/PITCH_DECK.md`.
-
-**Expected output:** Complete, audit-ready submission dossier and single master prompt.
-
-**Acceptance criteria:** All text fields exceed character minimums; master prompt covers all 8 modules.
-
----
-
-### M10 — Production packaging, video demo guide, & final audit
-
-**Status:** Planned
-
-**Objective:** Final end-to-end rehearsal, containerized deployment, video demo recording guide, and clean project handover.
-
-**Files:**
-
-- `docs/VIDEO_DEMO_SCRIPT.md`
-- `deploy/Dockerfile`
-- `docker-compose.yml`
-- root `README.md`
-
-**Instructions:**
-
-1. Prepare a timed 2–3 minute video demo script (`docs/VIDEO_DEMO_SCRIPT.md`) with click-by-click instructions, script voiceover, and screen capture cues.
-2. Build `deploy/Dockerfile` and `docker-compose.yml` for unified one-command container deployment.
-3. Update root `README.md` with badges, system architecture, installation steps, MCP configuration, and live demo links.
-4. Run full regression test suite (target: 100% pass across all modules).
-
-**Expected output:** Production-ready containerized repository and video demo script.
-
-**Acceptance criteria:** `docker compose up` starts the service cleanly; all documentation links resolve.
 
 ## 4. Suggested 48-hour schedule
 

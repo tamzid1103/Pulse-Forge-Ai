@@ -44,19 +44,17 @@ The live demo must use the trained model and real local audio samples, not hardc
 
 Highlight the MIMII data source, Autoencoder, baseline comparison, validation threshold, and reliability checks. Explain that a real factory pilot would require sensor evaluation, expert review, and operational validation.
 
-## 3. Demo assets to prepare
+## 3. Demo assets and curated scenario suite
 
-Create a local `demo_audio/` folder containing only small files that can be legally included and redistributed under the dataset license, or use locally stored dataset audio that is not committed to Git.
+A local `demo_audio/` folder is bundled in the repository containing 5 curated, representative audio files covering all operational branches. They allow offline, one-click demonstration during the video recording:
 
-Prepare:
-
-- `fan_normal_demo.wav` — held-out normal example.
-- `fan_anomaly_demo.wav` — held-out anomalous example.
-- `fan_review_demo.wav` — poor-quality or unfamiliar example that triggers the documented review path.
-
-Record each file's source ID, ground-truth label, reason for review-needed status, and expected model behavior in a private/demo manifest. Keep ground truth separate from UI display when demonstrating model prediction.
-
-Do not fabricate or manually label a recording as abnormal if the original data label does not support it.
+| File | Scenario | Acoustic Characteristics | Expected Decision Status |
+| :--- | :--- | :--- | :--- |
+| `01_normal_fan.wav` | Baseline Healthy Fan | Continuous steady 16 kHz fan hum; passes quality and familiarity checks. | **`NORMAL` (Green)** |
+| `02_bearing_anomaly.wav` | Genuine Bearing Anomaly | Acoustic rattle and periodic impact pulses from genuine MIMII abnormal test set. Score exceeds threshold (0.8904). | **`POSSIBLE_ANOMALY` (Red)** |
+| `03_silent_sensor_failure.wav` | Disconnected Microphone | Low-energy signal (RMS < 0.0010). Triggers silent sensor warning. | **`NEEDS_REVIEW` (Amber)** |
+| `04_clipped_sensor_saturation.wav` | Sensor Gain Overflow | Heavy digital saturation (> 1% samples at +/- 1.0). Triggers clipping warning. | **`NEEDS_REVIEW` (Amber)** |
+| `05_unfamiliar_operating_noise.wav` | Domain Shift / Background Noise | Acoustic distribution deviates from fan training baseline. Latent familiarity distance > 4.4682. | **`NEEDS_REVIEW` (Amber)** |
 
 ## 4. Live-demo checklist
 
