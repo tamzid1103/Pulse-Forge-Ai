@@ -12,8 +12,14 @@ from __future__ import annotations
 import io
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any
+
+# Ensure project root is on sys.path when launched via `streamlit run app/dashboard.py`
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # Ensure matplotlib uses writable cache directory in restricted environments
 os.environ["MPLCONFIGDIR"] = "/tmp/matplotlib_cache"
