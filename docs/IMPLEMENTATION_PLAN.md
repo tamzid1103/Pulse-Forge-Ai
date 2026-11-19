@@ -214,7 +214,7 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ### M6 — End-to-end application service, SQLite audit history, & interactive Streamlit dashboard
 
-**Status:** Ready to Implement (Tonight's Priority)
+**Status:** Completed & Verified (All 5 demo scenarios validated; Streamlit operational; 129/129 tests passing)
 
 **Objective:** Create the unified application service, local embedded SQLite metadata history, pre-packaged demo scenarios, and an interactive, executive-grade Streamlit dashboard for tomorrow morning's video demo recording.
 
@@ -257,7 +257,7 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ### M7 — Preliminary submission dossier & video recording script
 
-**Status:** Ready to Implement (Tonight's Priority)
+**Status:** Completed & Delivered (`docs/PRELIMINARY_VIDEO_SCRIPT.md` & `docs/PRELIMINARY_SUBMISSION_DOSSIER.md` ready for tomorrow morning)
 
 **Objective:** Deliver an exact, timed video recording script and complete, pre-filled submission text for the CloudCamp portal.
 

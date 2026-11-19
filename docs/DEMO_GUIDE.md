@@ -54,7 +54,7 @@ A local `demo_audio/` folder is bundled in the repository containing 5 curated, 
 | `02_bearing_anomaly.wav` | Genuine Bearing Anomaly | Acoustic rattle and periodic impact pulses from genuine MIMII abnormal test set. Score exceeds threshold (0.8904). | **`POSSIBLE_ANOMALY` (Red)** |
 | `03_silent_sensor_failure.wav` | Disconnected Microphone | Low-energy signal (RMS < 0.0010). Triggers silent sensor warning. | **`NEEDS_REVIEW` (Amber)** |
 | `04_clipped_sensor_saturation.wav` | Sensor Gain Overflow | Heavy digital saturation (> 1% samples at +/- 1.0). Triggers clipping warning. | **`NEEDS_REVIEW` (Amber)** |
-| `05_unfamiliar_operating_noise.wav` | Domain Shift / Background Noise | Acoustic distribution deviates from fan training baseline. Latent familiarity distance > 4.4682. | **`NEEDS_REVIEW` (Amber)** |
+| `05_unfamiliar_operating_noise.wav` | Domain Shift / Background Noise | Acoustic distribution deviates from fan training baseline. Latent familiarity distance exceeds calibrated threshold (> 9.2549). | **`NEEDS_REVIEW` (Amber)** |
 
 ## 4. Live-demo checklist
 
