@@ -1,33 +1,54 @@
 # System Architecture
 
-## 1. Architecture decision
+## 1. Architecture strategy: Layered Industrial AI Platform
 
-Use a **modular Python monolith with Streamlit** for the hackathon MVP. It keeps the data path, model inference, and UI in one environment and avoids unnecessary service deployment work. Keep core logic independent of Streamlit so FastAPI can call the same application service later.
-
-Do not start with microservices, PostgreSQL, cloud storage, Kubernetes, or a separate React frontend. The MVP has one operator and local audio uploads.
+PulseForge AI uses a **modular layered architecture** balancing two critical requirements:
+1. **Scientific Acoustic Integrity (Predictive Plant):** The core audio feature pipeline, PyTorch Autoencoder, signal quality checks, latent familiarity estimator, and 4-state decision policy remain 100% deterministic and physics-grounded.
+2. **CloudCamp BD Hackathon Excellence:** Layered around this core engine are an application service layer, SQLite audit logging, a FastAPI adapter powering dual frontends (Streamlit + Lovable React), a custom Model Context Protocol (MCP) server, an agentic Factory Brain copilot with local Ollama/RAG integration, and Cloudflare Tunneling for live public judging.
 
 ## 2. Logical architecture
 
 ```mermaid
 flowchart TD
-    U[Maintenance Operator / Demo User] --> UI[Streamlit Dashboard]
-    UI --> UP[Upload and Input Validation]
-    UP -->|Valid WAV| APP[Analysis Application Service]
-    UP -->|Invalid| ERR[Actionable Validation Message]
-    APP --> PRE[Audio Preprocessing]
-    PRE --> FE[Feature Extraction: Log-Mel]
-    FE --> MODEL[Fan Anomaly Model: Autoencoder]
-    FE --> BASE[Optional Baseline: Isolation Forest]
-    PRE --> Q[Signal Quality Checks]
-    FE --> SHIFT[Input Familiarity / Domain-Shift Check]
-    MODEL --> DEC[Decision Policy]
-    Q --> DEC
-    SHIFT --> DEC
-    DEC --> RESULT[Analysis Result + Evidence + Recommendation]
-    RESULT --> UI
-    RESULT -. optional metadata .-> DB[(SQLite Analysis Metadata)]
-    ART[Model Checkpoint + Config + Threshold] --> MODEL
-    ART --> SHIFT
+    subgraph Clients["Presentation & Integration Layer"]
+        U1["Plant Maintenance Operator"] --> ST["Streamlit Dashboard (Local / app/dashboard.py)"]
+        U2["Hackathon Judge / Remote Operator"] --> LV["Lovable React UI (Web App)"]
+        CFT["Cloudflare Tunnel / ngrok"] --> ST
+        CFT --> LV
+        AGT["External AI Agents (Antigravity, Claude, Cursor)"] --> MCP["PulseForge MCP Server (src/mcp_server.py)"]
+    end
+
+    subgraph ServiceLayer["Application & API Service Layer"]
+        ST --> SVC["Core Application Service (src/service.py)"]
+        LV --> API["FastAPI REST Endpoints (src/api.py)"]
+        API --> SVC
+        MCP --> SVC
+        SVC --> DB[("SQLite Audit Store (src/persistence.py)")]
+    end
+
+    subgraph CoreEngine["Predictive Plant ML Engine (M1 - M5)"]
+        SVC --> AIO["Audio Loading & Validation (src/audio_io.py)"]
+        AIO --> QC["Signal Quality Verification (src/quality.py)"]
+        AIO --> FEAT["Log-Mel Feature Extraction (src/features.py)"]
+        FEAT --> AE["Primary PyTorch Autoencoder (src/models/autoencoder.py)"]
+        FEAT --> BL["Baseline Isolation Forest (src/models/baseline.py)"]
+        AE --> FAM["Latent Familiarity Estimator (src/familiarity.py)"]
+        AE --> THR["Thresholding Engine (src/thresholding.py)"]
+        QC --> DEC["Industrial Decision Policy (src/decision.py)"]
+        FAM --> DEC
+        THR --> DEC
+        DEC --> RES["Structured AnalysisResult (src/schemas.py)"]
+        RES --> SVC
+    end
+
+    subgraph CopilotLayer["Factory Brain Copilot Layer (M7)"]
+        DEC -- "Anomaly / Needs Review" --> COP["Factory Brain Copilot (src/copilot.py)"]
+        KB["Industrial Fan SOPs & ISO Standards (data/knowledge_base/)"] --> RAG["Semantic / Contextual RAG Store"]
+        RAG --> COP
+        OLL["Local Ollama Runtime (llama3.2 / deepseek-r1)"] --> COP
+        COP --> WO["Actionable Maintenance Ticket & Inspection Checklist"]
+        WO --> SVC
+    end
 ```
 
 ## 3. Component responsibilities

@@ -107,3 +107,34 @@ This is the intended future request pattern, not evidence that the endpoint exis
 ## 6. API/UI consistency
 
 Streamlit and FastAPI must call the same application service and decision policy. Do not implement separate anomaly thresholds or reliability logic inside the UI/API layer.
+
+
+## 7. Model Context Protocol (MCP) Server Specification (M7)
+
+PulseForge AI exposes its core industrial intelligence via a custom Model Context Protocol (MCP) server (`src/mcp_server.py`) supporting Stdio and Streamable HTTP/SSE transports.
+
+### Tools Exposed to AI Agents:
+
+1. **`analyze_fan_audio`**:
+   - Description: "Executes the full PulseForge AI acoustic pipeline on a target audio file: quality checks -> log-Mel feature extraction -> PyTorch Autoencoder reconstruction -> latent familiarity check -> 4-state industrial decision."
+   - Parameters:
+     - `file_path` (string, required): Path to WAV recording.
+     - `machine_id` (string, optional, default "id_00"): Target fan identifier.
+   - Returns: Formatted `AnalysisResult` JSON.
+
+2. **`inspect_signal_quality`**:
+   - Description: "Evaluates physical acoustic signal suitability before running ML inference (checks for silence, clipping, duration, and DC bias)."
+   - Parameters:
+     - `file_path` (string, required): Path to WAV recording.
+   - Returns: Formatted `QualityReport` JSON.
+
+3. **`get_machine_health_status`**:
+   - Description: "Retrieves recent historical analysis records, anomaly rates, and quality flags for a specific machine ID from the SQLite audit store."
+   - Parameters:
+     - `machine_id` (string, optional, default "id_00"): Machine identifier.
+     - `limit` (integer, optional, default 10): Maximum number of recent records.
+   - Returns: List of recent `AnalysisResult` summaries.
+
+### Resources Exposed:
+- `pulseforge://telemetry/latest`: Real-time machine health state summary.
+- `pulseforge://manifest/fan`: Catalog of available benchmark audio files and split details.

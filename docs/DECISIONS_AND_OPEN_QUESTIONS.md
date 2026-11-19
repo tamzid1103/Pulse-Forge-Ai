@@ -156,3 +156,23 @@ Approved by:
 - **Impact on scope:** Establishes the core differentiator for PulseForge AI: trustworthy industrial screening with explicit quality/unfamiliarity communication.
 - **Documents updated:** `src/schemas.py`, `src/quality.py`, `src/familiarity.py`, `src/thresholding.py`, `src/decision.py`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/IMPLEMENTATION_PLAN.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
+
+
+### Decision DEC-006: CloudCamp BD 2026 Hackathon Strategy Alignment & Architecture Expansion
+- **Date:** 2026-11-19
+- **Question / change:** How should the project architecture expand beyond the baseline MVP to maximize score on the official CloudCamp BD International AI Builders Congress 2026 Pre-Judgment Auto-Scoring Rubric without compromising ML acoustic integrity?
+- **Options considered:**
+  - (A) Strict minimal MVP: Keep Streamlit-only, no database, no API, no MCP server, no LLM copilot (risks losing 60+ pre-judgment rubric points).
+  - (B) Replace ML pipeline with an LLM: Use an LLM for acoustic diagnosis (violates physical acoustic principles and AGENTS.md rules).
+  - (C) Layered Architecture Expansion: Preserve the core acoustic ML pipeline (Autoencoder + Baseline + Quality + Familiarity + Decision Engine) as the deterministic **Predictive Plant** engine. Build on top of it:
+    1. Reusable Service Layer (`src/service.py`) and SQLite audit persistence (`src/persistence.py`).
+    2. FastAPI adapter (`src/api.py`) powering dual frontends: local Streamlit (`app/dashboard.py`) and modern React dashboard via Lovable MCP.
+    3. Custom PulseForge MCP Server (`src/mcp_server.py`) exposing acoustic diagnosis tools (capturing 12 MCP points).
+    4. Factory Brain Copilot (`src/copilot.py`) utilizing semantic RAG on fan maintenance SOPs and local Ollama execution (capturing 26+ points for RAG & Local Models).
+    5. Cloudflare Tunneling (`scripts/run_tunnel.sh`) for live internet demo access (capturing 6 points).
+    6. Dedicated Submission Dossier & Zero to Launch Single Master Prompt (`docs/CLOUDCAMP_SUBMISSION_DOSSIER.md` & `docs/ZERO_TO_LAUNCH_MASTER_PROMPT.md`).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Directly addresses every scoring category in the CloudCamp knowledge base (`cloudcamp://knowledge-base`) while preserving complete scientific integrity, determinism, and reproducibility of the fan acoustic anomaly detection model.
+- **Impact on scope:** Expands Milestones M6–M10 with structured, modular components.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`, `docs/API_DOCUMENTATION.md`, `docs/DATABASE_SCHEMA.md`.
+- **Approved by:** Tamzidul & Antigravity (Implementation Team).
