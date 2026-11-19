@@ -47,6 +47,7 @@ from app.ui_components import (
     render_sidebar_brand,
     render_sidebar_equipment,
     render_sidebar_footer,
+    render_stage_header,
 )
 
 # Backwards-compatible alias for testing
@@ -282,7 +283,7 @@ if selected_view == "Acoustic Diagnostic Studio":
     # -----------------------------------------------------------------------
     # STAGE 1: SELECT RECORDING
     # -----------------------------------------------------------------------
-    st.markdown("#### 1. Select Recording")
+    render_stage_header(1, "Select Recording")
 
     input_mode = st.radio(
         "Input Mode",
@@ -359,7 +360,7 @@ if selected_view == "Acoustic Diagnostic Studio":
     # -----------------------------------------------------------------------
     # STAGE 2: REVIEW AUDIO
     # -----------------------------------------------------------------------
-    st.markdown("#### 2. Review Audio")
+    render_stage_header(2, "Review Audio")
 
     has_active_audio = (
         st.session_state["active_audio_bytes"] is not None
@@ -411,7 +412,7 @@ if selected_view == "Acoustic Diagnostic Studio":
         # -------------------------------------------------------------------
         # STAGE 3: RUN DIAGNOSTICS
         # -------------------------------------------------------------------
-        st.markdown("#### 3. Run Diagnostics")
+        render_stage_header(3, "Run Diagnostics")
 
         col_run, col_hint = st.columns([1, 2], vertical_alignment="center")
         with col_run:

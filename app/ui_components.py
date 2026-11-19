@@ -27,13 +27,14 @@ CUSTOM_THEME_CSS = """
 <style>
 /* 1. Global Workspace & Typography */
 html, body, [data-testid="stAppViewContainer"] {
-    background-color: #F5F7FB;
-    color: #172033;
+    background-color: #F8FAFC;
+    color: #0F172A;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 [data-testid="stHeader"] {
-    background-color: rgba(245, 247, 251, 0.9);
+    background-color: rgba(248, 250, 252, 0.95);
+    border-bottom: 1px solid #E2E8F0;
 }
 
 /* 2. Dark Navy Sidebar (#101B2D) */
@@ -48,17 +49,108 @@ html, body, [data-testid="stAppViewContainer"] {
 
 [data-testid="stSidebar"] h1, 
 [data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3 {
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4 {
     color: #F8FAFC !important;
     font-weight: 700;
 }
 
 [data-testid="stSidebar"] hr {
     border-color: #1E314B !important;
-    margin: 1rem 0;
+    margin: 0.9rem 0;
 }
 
-/* 3. Application-Style Navigation Menu */
+/* 3. FIX: Sidebar Buttons (Eliminate stark white button with faint text) */
+[data-testid="stSidebar"] button {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    border: 1px solid #334155 !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.45rem 0.85rem !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-testid="stSidebar"] button * {
+    color: #F8FAFC !important;
+}
+
+[data-testid="stSidebar"] button:hover {
+    background-color: #0F766E !important;
+    color: #FFFFFF !important;
+    border-color: #14B8A6 !important;
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.35) !important;
+}
+
+[data-testid="stSidebar"] button:active {
+    background-color: #115E59 !important;
+}
+
+/* 4. FIX: Sidebar Expanders (Eliminate stark white expander container) */
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+    background-color: #142033 !important;
+    border: 1px solid #233852 !important;
+    border-radius: 6px !important;
+    margin: 0.4rem 0 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] details {
+    background-color: #142033 !important;
+    border-radius: 6px !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    background-color: #16253B !important;
+    color: #F1F5F9 !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #1E314B !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary * {
+    color: #F1F5F9 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    color: #5EEAD4 !important;
+    background-color: #1A2C46 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary svg {
+    color: #94A3B8 !important;
+    fill: #94A3B8 !important;
+}
+
+/* 5. FIX: Sidebar Inputs & Code Elements */
+[data-testid="stSidebar"] [data-testid="stTextInput"] input {
+    background-color: #0E1A2B !important;
+    color: #F8FAFC !important;
+    border: 1px solid #294060 !important;
+    border-radius: 6px !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stTextInput"] input:focus {
+    border-color: #0F766E !important;
+    box-shadow: 0 0 0 1px #0F766E !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stTextInput"] label {
+    color: #CBD5E1 !important;
+    font-weight: 600 !important;
+    font-size: 0.78rem !important;
+}
+
+[data-testid="stSidebar"] code {
+    background-color: #0E1A2B !important;
+    color: #5EEAD4 !important;
+    border: 1px solid #233852 !important;
+    padding: 0.1rem 0.35rem !important;
+    border-radius: 4px !important;
+    font-size: 0.78rem !important;
+}
+
+/* 6. Application-Style Navigation Menu */
 [data-testid="stSidebar"] div[data-testid="stRadio"] > label {
     display: none;
 }
@@ -84,7 +176,6 @@ html, body, [data-testid="stAppViewContainer"] {
     color: #FFFFFF !important;
 }
 
-/* Active Navigation Row */
 [data-testid="stSidebar"] div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-checked="true"],
 [data-testid="stSidebar"] div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
     background-color: #20364D !important;
@@ -93,13 +184,12 @@ html, body, [data-testid="stAppViewContainer"] {
     font-weight: 600;
 }
 
-/* Hide raw radio circles to give application sidebar appearance */
 [data-testid="stSidebar"] div[data-testid="stRadio"] input[type="radio"],
 [data-testid="stSidebar"] div[data-testid="stRadio"] div[data-testid="stWidgetLabel"] + div svg {
     opacity: 0.15;
 }
 
-/* 4. Equipment Context Card (Sidebar) */
+/* 7. Equipment Context Card (Sidebar) */
 .sidebar-context-box {
     background-color: #16253B;
     border: 1px solid #233852;
@@ -141,10 +231,11 @@ html, body, [data-testid="stAppViewContainer"] {
     font-size: 0.78rem;
 }
 
-/* 5. Main Page Header */
+/* 8. Main Workspace Header */
 .main-header-container {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
+    border-top: 3px solid #0F766E;
     border-radius: 8px;
     padding: 1.1rem 1.4rem;
     margin-bottom: 1.25rem;
@@ -152,10 +243,10 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 
 .main-header-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #172033;
-    letter-spacing: -0.02em;
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #0F172A;
+    letter-spacing: -0.025em;
     margin: 0 0 0.2rem 0;
 }
 
@@ -165,34 +256,138 @@ html, body, [data-testid="stAppViewContainer"] {
     margin: 0;
 }
 
-/* 6. Diagnostic Decision Cards (Light Theme, Accessible High-Contrast) */
+/* 9. Stage Headers with Circular Number Badges */
+.stage-header-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 1.6rem 0 0.75rem 0;
+}
+
+.stage-badge-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background-color: #0F766E;
+    color: #FFFFFF;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(15, 118, 110, 0.3);
+}
+
+.stage-badge-text {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #0F172A;
+    letter-spacing: -0.01em;
+}
+
+/* 10. Main Workspace Buttons */
+[data-testid="stAppViewContainer"] button[kind="primary"] {
+    background-color: #0F766E !important;
+    color: #FFFFFF !important;
+    border: 1px solid #0D9488 !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1.2rem !important;
+    box-shadow: 0 1px 3px rgba(15, 118, 110, 0.25) !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-testid="stAppViewContainer"] button[kind="primary"]:hover {
+    background-color: #115E59 !important;
+    border-color: #0F766E !important;
+    box-shadow: 0 2px 6px rgba(15, 118, 110, 0.4) !important;
+}
+
+[data-testid="stAppViewContainer"] button[kind="secondary"] {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.48rem 1.1rem !important;
+    transition: all 0.15s ease !important;
+}
+
+[data-testid="stAppViewContainer"] button[kind="secondary"]:hover {
+    background-color: #F8FAFC !important;
+    color: #0F766E !important;
+    border-color: #0F766E !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 11. File Uploader Container */
+[data-testid="stFileUploader"] > section {
+    background-color: #FFFFFF !important;
+    border: 1.5px dashed #94A3B8 !important;
+    border-radius: 8px !important;
+    padding: 1.4rem !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stFileUploader"] > section:hover {
+    border-color: #0F766E !important;
+    background-color: #F0FDF4 !important;
+}
+
+[data-testid="stFileUploader"] button {
+    background-color: #0F766E !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0.45rem 1rem !important;
+}
+
+/* 12. Tabs Styling */
+button[data-baseweb="tab"] {
+    color: #64748B !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    padding: 0.6rem 1.2rem !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #0F766E !important;
+    border-bottom: 2.5px solid #0F766E !important;
+}
+
+/* 13. Diagnostic Decision Cards */
 .decision-card {
     border-radius: 8px;
     padding: 1.25rem 1.4rem;
     margin: 1.2rem 0;
     border-width: 1px;
     border-style: solid;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .card-normal {
     background-color: #F0FDF4;
     border-color: #86EFAC;
+    border-left: 5px solid #16A34A;
 }
 
 .card-anomaly {
     background-color: #FEF2F2;
     border-color: #FCA5A5;
+    border-left: 5px solid #DC2626;
 }
 
 .card-review {
     background-color: #FFFBEB;
     border-color: #FCD34D;
+    border-left: 5px solid #D97706;
 }
 
 .card-invalid {
     background-color: #F8FAFC;
     border-color: #CBD5E1;
+    border-left: 5px solid #64748B;
 }
 
 .status-badge {
@@ -235,14 +430,15 @@ html, body, [data-testid="stAppViewContainer"] {
     border-bottom: 1px solid #E2E8F0;
 }
 
-/* 7. Metric Cards */
+/* 14. Metric Cards (With subtle top accent) */
 .metric-tile {
     background-color: #FFFFFF;
     border: 1px solid #E2E8F0;
+    border-top: 3px solid #0F766E;
     border-radius: 8px;
     padding: 0.9rem 1rem;
     text-align: center;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .metric-tile-label {
@@ -257,31 +453,34 @@ html, body, [data-testid="stAppViewContainer"] {
 .metric-tile-val {
     font-size: 1.45rem;
     font-weight: 700;
-    color: #172033;
+    color: #0F172A;
     margin: 0.2rem 0;
 }
 
 .metric-tile-sub {
     font-size: 0.72rem;
-    color: #94A3B8;
+    color: #64748B;
 }
 
-/* 8. Recording Preview Box */
+/* 15. Recording Preview Box */
 .audio-review-box {
     background-color: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #CBD5E1;
+    border-left: 4px solid #0F766E;
     border-radius: 8px;
     padding: 1rem 1.25rem;
     margin: 0.8rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .review-meta-item {
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     color: #475569;
+    padding: 0.15rem 0;
 }
 
 .review-meta-item strong {
-    color: #172033;
+    color: #0F172A;
 }
 </style>
 """
@@ -290,6 +489,19 @@ html, body, [data-testid="stAppViewContainer"] {
 def inject_custom_theme() -> None:
     """Inject application-wide CSS theme and typography tokens."""
     st.markdown(CUSTOM_THEME_CSS, unsafe_allow_html=True)
+
+
+def render_stage_header(number: int | str, title: str) -> None:
+    """Render a clean, high-contrast industrial workflow stage header."""
+    st.markdown(
+        f"""
+        <div class="stage-header-badge">
+            <span class="stage-badge-num">{number}</span>
+            <span class="stage-badge-text">{title}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_sidebar_brand() -> None:
@@ -365,7 +577,7 @@ def render_page_header(
 ) -> None:
     """Render compact, restrained header without oversized decorative icons."""
     badge_html = (
-        f'<span style="background-color: #F1F5F9; border: 1px solid #CBD5E1; color: #475569; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 4px; text-transform: uppercase;">{badge_label}</span>'
+        f'<span style="background-color: #F0FDFA; border: 1px solid #99F6E4; color: #0F766E; font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em;">{badge_label}</span>'
         if badge_label
         else ""
     )
@@ -399,51 +611,58 @@ def render_acoustic_plots(
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 4.4), dpi=100)
     fig.patch.set_facecolor("#FFFFFF")
 
+    # Time axis in seconds
+    time_axis = np.linspace(0, len(audio_data) / sample_rate, len(audio_data))
+
     # 1. Waveform Plot
-    t = np.linspace(0, len(audio_data) / sample_rate, len(audio_data))
-    ax1.set_facecolor("#F8FAFC")
-    ax1.plot(t, audio_data, color="#0F766E", linewidth=0.75, alpha=0.9)
-    ax1.set_xlim(0, t[-1] if len(t) > 0 else 1.0)
-    ax1.set_ylim(-1.05, 1.05)
-    ax1.set_ylabel("Amplitude", color="#475569", fontsize=8)
-    ax1.tick_params(colors="#64748B", labelsize=7)
-    ax1.grid(True, linestyle="--", alpha=0.5, color="#E2E8F0")
-    ax1.set_title("Acoustic Time-Domain Waveform", color="#172033", fontsize=9, loc="left", pad=4, fontweight="600")
+    ax1.plot(time_axis, audio_data, color="#0F766E", linewidth=0.75, alpha=0.9)
+    ax1.set_facecolor("#FAFAFA")
+    ax1.set_ylabel("Amplitude", fontsize=8, color="#172033", fontweight=600)
+    ax1.set_xlim([0, time_axis[-1] if len(time_axis) > 0 else 1.0])
+    ax1.grid(True, linestyle="--", alpha=0.3, color="#CBD5E1")
+    ax1.tick_params(colors="#64748B", labelsize=7.5)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+    ax1.spines["left"].set_color("#CBD5E1")
+    ax1.spines["bottom"].set_color("#CBD5E1")
 
     # 2. Log-Mel Spectrogram
-    ax2.set_facecolor("#F8FAFC")
-    try:
-        s_mel = librosa.feature.melspectrogram(
-            y=audio_data,
-            sr=sample_rate,
-            n_fft=n_fft,
-            hop_length=hop_length,
-            n_mels=n_mels,
-            fmin=fmin,
-            fmax=fmax,
-        )
-        s_db = librosa.power_to_db(s_mel, ref=np.max)
-        img = librosa.display.specshow(
-            s_db,
-            sr=sample_rate,
-            hop_length=hop_length,
-            x_axis="time",
-            y_axis="mel",
-            fmin=fmin,
-            fmax=fmax,
-            ax=ax2,
-            cmap="viridis",
-        )
-        cbar = fig.colorbar(img, ax=ax2, format="%+2.0f dB", pad=0.015, shrink=0.9)
-        cbar.ax.tick_params(colors="#64748B", labelsize=6)
-    except Exception as e:
-        logger.warning("Failed to render spectrogram: %s", e)
-        ax2.text(0.5, 0.5, "Spectrogram unavailable for this signal", color="#64748B", ha="center")
+    mel_spec = librosa.feature.melspectrogram(
+        y=audio_data,
+        sr=sample_rate,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        n_mels=n_mels,
+        fmin=fmin,
+        fmax=fmax,
+    )
+    log_mel = librosa.power_to_db(mel_spec, ref=np.max)
 
-    ax2.set_xlabel("Time (seconds)", color="#475569", fontsize=8)
-    ax2.set_ylabel("Freq (Hz)", color="#475569", fontsize=8)
-    ax2.tick_params(colors="#64748B", labelsize=7)
-    ax2.set_title("Log-Mel Spectral Density (128 filter banks)", color="#172033", fontsize=9, loc="left", pad=4, fontweight="600")
+    img = librosa.display.specshow(
+        log_mel,
+        sr=sample_rate,
+        hop_length=hop_length,
+        x_axis="time",
+        y_axis="mel",
+        fmin=fmin,
+        fmax=fmax,
+        ax=ax2,
+        cmap="viridis",
+    )
+    ax2.set_ylabel("Freq (Hz)", fontsize=8, color="#172033", fontweight=600)
+    ax2.set_xlabel("Time (s)", fontsize=8, color="#172033", fontweight=600)
+    ax2.grid(False)
+    ax2.tick_params(colors="#64748B", labelsize=7.5)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+    ax2.spines["left"].set_color("#CBD5E1")
+    ax2.spines["bottom"].set_color("#CBD5E1")
 
-    plt.tight_layout()
+    # Colorbar
+    cbar_ax = fig.add_axes([0.91, 0.15, 0.015, 0.35])
+    cbar = fig.colorbar(img, cax=cbar_ax, format="%+2.0f dB")
+    cbar.ax.tick_params(labelsize=6.5, colors="#64748B")
+    cbar.outline.set_color("#CBD5E1")
+
+    plt.subplots_adjust(left=0.08, right=0.89, top=0.92, bottom=0.14, hspace=0.32)
     return fig
