@@ -35,6 +35,7 @@ from src.familiarity import LatentFamiliarityEstimator
 from src.features import FeatureScaler, extract_features
 from src.models.autoencoder import AutoencoderDetector
 from src.quality import check_signal_quality
+from src.thresholding import select_threshold_iqr
 from src.schemas import DecisionStatus, ModelPrediction
 
 logger = logging.getLogger("pulseforge.calibrate_decision")
@@ -98,8 +99,12 @@ def main() -> None:
         latents = detector.extract_latent_embeddings(scaled_feats)
         val_norm_latents.append(latents)
 
-    fam_threshold = familiarity_estimator.select_threshold(val_norm_latents, target_fpr=0.05)
-    logger.info("Calibrated Familiarity threshold: %.4f (target FPR=0.05)", fam_threshold)
+    train_scores = [familiarity_estimator.score_recording(emb) for emb in all_train_embeddings]
+    val_scores = [familiarity_estimator.score_recording(emb) for emb in val_norm_latents]
+    fam_threshold = select_threshold_iqr(train_scores + val_scores, k=1.5)
+    familiarity_estimator.threshold = fam_threshold
+    logger.info("Calibrated Familiarity threshold (Tukey IQR k=1.5): %.4f on %d normal recordings",
+                fam_threshold, len(train_scores) + len(val_scores))
 
     # 4. Save familiarity artifacts
     fam_joblib_path = cfg.paths.model_artifacts_dir / "familiarity_fan_id_00.joblib"
