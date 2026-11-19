@@ -52,6 +52,7 @@ from app.ui_components import (
 # Backwards-compatible alias for testing
 plot_acoustic_features = render_acoustic_plots
 from src.config import AppConfig
+from src.copilot import IndustrialCopilot
 from src.decision import DecisionStatus
 from src.persistence import AnalysisStore
 from src.schemas import AnalysisResult
@@ -89,6 +90,15 @@ def get_service() -> PulseForgeService:
 
 service = get_service()
 config = service.config
+
+
+@st.cache_resource
+def get_copilot() -> IndustrialCopilot:
+    """Initialize and cache the Industrial AI Copilot singleton."""
+    return IndustrialCopilot()
+
+
+copilot = get_copilot()
 
 
 # ---------------------------------------------------------------------------
@@ -198,8 +208,50 @@ with st.sidebar:
             st.rerun()
     else:
         st.caption("No inspection records in database.")
+    st.divider()
 
-    # 6. Honest footer
+    # 6. Factory Brain: Groq AI Copilot Settings
+    with st.expander("AI Copilot Settings (Groq)", expanded=False):
+        st.markdown(
+            """
+            <div style="font-size: 0.74rem; color: #94A3B8; margin-bottom: 0.4rem; line-height: 1.4;">
+                Connect free Groq API key for live <code>llama-3.3-70b</code> maintenance reasoning.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        groq_input = st.text_input(
+            "Groq API Key",
+            type="password",
+            value=st.session_state.get("user_groq_api_key", ""),
+            placeholder="gsk_...",
+            help="Free key from console.groq.com. Can also be set in .env or Streamlit Secrets.",
+            key="sidebar_groq_key_input",
+        )
+        if groq_input:
+            st.session_state["user_groq_api_key"] = groq_input
+
+        eff_key = copilot.get_api_key(override_key=st.session_state.get("user_groq_api_key"))
+        if eff_key:
+            st.markdown(
+                """
+                <div style="font-size: 0.75rem; color: #34D399; font-weight: 600; margin-top: 0.3rem;">
+                    ● Groq LPU Active (llama-3.3-70b)
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
+                <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 0.3rem;">
+                    ○ Offline SOP Mode (Deterministic)
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # 7. Honest footer
     render_sidebar_footer()
 
 
@@ -578,6 +630,186 @@ if selected_view == "Acoustic Diagnostic Studio":
                         else "Out-of-Distribution Shift"
                     ),
                 })
+
+        # 5. Factory Brain: Industrial AI Copilot (Groq LPU Grounded in SOP & ISO 10816)
+        st.divider()
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;">
+                <h4 style="margin: 0; color: #172033; font-weight: 700; font-size: 1.15rem;">
+                    🤖 Industrial AI Maintenance Copilot
+                </h4>
+                <span style="font-size: 0.72rem; background: #E6FFFA; color: #0D9488; border: 1px solid #99F6E4; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                    Factory Brain (Track 2)
+                </span>
+            </div>
+            <p style="font-size: 0.86rem; color: #64748B; margin-top: 0; margin-bottom: 0.8rem;">
+                Automated ISO 10816 root-cause reasoning, OSHA Lockout/Tagout checklists, and technician advisory powered by Groq LPU.
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        effective_groq_key = copilot.get_api_key(override_key=st.session_state.get("user_groq_api_key"))
+
+        c_tab1, c_tab2 = st.tabs(["📋 Maintenance Work Order", "💬 Technician Copilot Chat"])
+
+        with c_tab1:
+            col_gen, col_stat = st.columns([2, 3])
+            with col_gen:
+                generate_clicked = st.button(
+                    "⚡ Generate / Refresh Work Order",
+                    key="btn_generate_work_order",
+                    type="primary",
+                    use_container_width=True,
+                )
+            with col_stat:
+                if effective_groq_key:
+                    st.caption("🟢 **Groq LPU Connected:** Live reasoning via `llama-3.3-70b-versatile`.")
+                else:
+                    st.caption("⚪ **Deterministic SOP Engine:** Offline industrial rule-based fallback active.")
+
+            # Store active work order in session state
+            wo_cache_key = f"wo_{cached['id']}"
+            if generate_clicked or wo_cache_key not in st.session_state:
+                with st.spinner("Compiling telemetry and generating maintenance work order..."):
+                    wo = copilot.generate_work_order(
+                        result=result,
+                        machine_id=f"{result.machine_type}_{result.machine_id}",
+                        override_key=effective_groq_key,
+                    )
+                    st.session_state[wo_cache_key] = wo
+
+            wo = st.session_state.get(wo_cache_key)
+            if wo:
+                urgency = wo.get("urgency", "ROUTINE")
+                urgency_color = "#991B1B" if urgency in ("PRIORITY_INSPECTION", "IMMEDIATE_ACTION") else "#166534"
+                urgency_bg = "#FEF2F2" if urgency in ("PRIORITY_INSPECTION", "IMMEDIATE_ACTION") else "#F0FDF4"
+                urgency_border = "#FECACA" if urgency in ("PRIORITY_INSPECTION", "IMMEDIATE_ACTION") else "#BBF7D0"
+
+                safety_items = "".join(f"<li>{item}</li>" for item in wo.get("safety_checklist", []))
+                step_items = "".join(f"<li>{step}</li>" for step in wo.get("recommended_steps", []))
+                tools_str = ", ".join(wo.get("required_tools", [])) or "Standard maintenance toolkit"
+                ppe_str = ", ".join(wo.get("required_ppe", [])) or "Standard facility PPE"
+
+                st.markdown(
+                    f"""
+                    <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 1.2rem; margin-top: 0.6rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.6rem; margin-bottom: 0.8rem;">
+                            <div>
+                                <span style="font-family: monospace; font-size: 0.88rem; font-weight: 700; color: #0F766E;">{wo.get('work_order_id', 'WO-FAN-2026-0001')}</span>
+                                <span style="font-size: 0.8rem; color: #64748B; margin-left: 0.8rem;">Asset: <strong>{wo.get('asset_id', 'fan_id_00')}</strong></span>
+                            </div>
+                            <span style="font-size: 0.72rem; font-weight: 700; color: {urgency_color}; background: {urgency_bg}; border: 1px solid {urgency_border}; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">
+                                {urgency}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 0.8rem;">
+                            <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748B; letter-spacing: 0.05em;">Suspected Mechanism & Condition</div>
+                            <div style="font-size: 0.95rem; font-weight: 600; color: #172033; margin-top: 0.2rem;">{wo.get('suspected_mechanism', 'N/A')}</div>
+                            <div style="font-size: 0.8rem; color: #0F766E; margin-top: 0.2rem;">ISO 10816 Severity Classification: <strong>{wo.get('iso_severity_zone', 'N/A')}</strong></div>
+                        </div>
+                        <div style="background: #FFFBEB; border-left: 3px solid #F59E0B; padding: 0.6rem 0.8rem; border-radius: 0 4px 4px 0; margin-bottom: 0.8rem;">
+                            <div style="font-size: 0.76rem; font-weight: 700; color: #92400E; text-transform: uppercase; margin-bottom: 0.2rem;">Mandatory OSHA Lockout/Tagout (LOTO) Checklist:</div>
+                            <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.82rem; color: #78350F; line-height: 1.45;">
+                                {safety_items}
+                            </ul>
+                        </div>
+                        <div style="margin-bottom: 0.8rem;">
+                            <div style="font-size: 0.76rem; font-weight: 700; color: #172033; text-transform: uppercase; margin-bottom: 0.3rem;">Actionable Inspection Steps:</div>
+                            <ol style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: #334155; line-height: 1.55;">
+                                {step_items}
+                            </ol>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem; font-size: 0.8rem;">
+                            <div style="background: #F8FAFC; padding: 0.6rem; border-radius: 4px; border: 1px solid #E2E8F0;">
+                                <strong style="color: #475569;">Required Mechanical Tools:</strong>
+                                <div style="color: #334155; margin-top: 0.2rem;">{tools_str}</div>
+                            </div>
+                            <div style="background: #F8FAFC; padding: 0.6rem; border-radius: 4px; border: 1px solid #E2E8F0;">
+                                <strong style="color: #475569;">Mandatory PPE:</strong>
+                                <div style="color: #334155; margin-top: 0.2rem;">{ppe_str}</div>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #E2E8F0; padding-top: 0.6rem; font-size: 0.78rem; color: #64748B; display: flex; justify-content: space-between;">
+                            <span>Engine: <strong>{wo.get('ai_engine', 'Copilot Engine')}</strong></span>
+                            <span>Created: {wo.get('created_at', 'Now')}</span>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                st.download_button(
+                    label="📥 Export Work Order (JSON)",
+                    data=json.dumps(wo, indent=2),
+                    file_name=f"{wo.get('work_order_id', 'work_order')}.json",
+                    mime="application/json",
+                    key="dl_work_order_json",
+                )
+
+        with c_tab2:
+            st.markdown(
+                """
+                <div style="font-size: 0.82rem; color: #64748B; margin-bottom: 0.5rem;">
+                    Ask questions regarding acoustic fault signatures, ISO 10816 severity thresholds, or fan lubrication SOPs.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Quick Prompt Chips
+            col_p1, col_p2, col_p3 = st.columns(3)
+            prompt_to_send = None
+            with col_p1:
+                if st.button("🔍 Why this status?", key="chip_why_status", use_container_width=True):
+                    prompt_to_send = f"Explain in technical terms why status '{result.status.value}' was assigned to this fan recording."
+            with col_p2:
+                if st.button("🛠️ Bearing inspection protocol", key="chip_bearing", use_container_width=True):
+                    prompt_to_send = "What specific physical inspection steps and tools are required to verify the bearing condition?"
+            with col_p3:
+                if st.button("📊 ISO 10816 correlation", key="chip_iso", use_container_width=True):
+                    prompt_to_send = "How does this acoustic anomaly reconstruction error correlate with ISO 10816 vibration severity zones?"
+
+            chat_history_key = f"chat_history_{cached['id']}"
+            if chat_history_key not in st.session_state:
+                st.session_state[chat_history_key] = [
+                    {
+                        "role": "assistant",
+                        "content": (
+                            f"Hello, I am the PulseForge AI Maintenance Copilot. I have reviewed the acoustic telemetry for "
+                            f"`{result.machine_type}_{result.machine_id}` (Status: **{result.status.value.upper()}**). "
+                            "How can I assist your physical inspection or maintenance planning?"
+                        ),
+                    }
+                ]
+
+            # Render existing chat messages
+            for message in st.session_state[chat_history_key]:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            # User input from chat_input or chip button
+            user_input = st.chat_input("Ask the maintenance copilot a question...")
+            active_prompt = prompt_to_send or user_input
+
+            if active_prompt:
+                st.session_state[chat_history_key].append({"role": "user", "content": active_prompt})
+                with st.chat_message("user"):
+                    st.markdown(active_prompt)
+
+                with st.chat_message("assistant"):
+                    with st.spinner("Copilot analyzing telemetry and industrial SOP..."):
+                        assistant_reply = copilot.chat_response(
+                            messages=st.session_state[chat_history_key],
+                            result=result,
+                            machine_id=f"{result.machine_type}_{result.machine_id}",
+                            override_key=effective_groq_key,
+                        )
+                        st.markdown(assistant_reply)
+                        st.session_state[chat_history_key].append(
+                            {"role": "assistant", "content": assistant_reply}
+                        )
 
 
 # ===========================================================================

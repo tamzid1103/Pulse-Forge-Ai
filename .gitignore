@@ -29,6 +29,8 @@ htmlcov/
 /data/*
 !/data/manifests/
 !/data/manifests/*
+!/data/knowledge_base/
+!/data/knowledge_base/*
 dataset/
 datasets/
 uploads/
