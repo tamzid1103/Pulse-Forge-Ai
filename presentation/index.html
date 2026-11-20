@@ -6,26 +6,36 @@
   <title>PulseForge AI — Industrial Acoustic Intelligence & Autonomous Maintenance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #0A0F1D;
-      --bg-card: rgba(16, 24, 45, 0.75);
-      --bg-card-hover: rgba(22, 34, 62, 0.85);
-      --border: rgba(45, 62, 95, 0.6);
-      --border-accent: rgba(20, 184, 166, 0.5);
-      --teal-primary: #0D9488;
-      --teal-glow: #14B8A6;
-      --teal-neon: #5EEAD4;
-      --cyan-accent: #06B6D4;
-      --amber-alert: #F59E0B;
-      --red-anomaly: #EF4444;
-      --green-normal: #10B981;
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --text-dim: #64748B;
+      --bg-page: #F8FAFC;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #F1F5F9;
+      --bg-sidebar-dark: #101B2D;
+      --border-light: #E2E8F0;
+      --border-medium: #CBD5E1;
+      --border-accent: #99F6E4;
+      --teal-primary: #0F766E;
+      --teal-vibrant: #0D9488;
+      --teal-light: #14B8A6;
+      --teal-surface: #F0FDFA;
+      --cyan-accent: #0284C7;
+      --text-heading: #0F172A;
+      --text-body: #334155;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --green-normal: #16A34A;
+      --green-bg: #DCFCE7;
+      --red-anomaly: #DC2626;
+      --red-bg: #FEE2E2;
+      --amber-review: #D97706;
+      --amber-bg: #FEF3C7;
       --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
     }
 
     * {
@@ -35,26 +45,27 @@
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
+      background-color: var(--bg-page);
+      color: var(--text-body);
       font-family: var(--font-sans);
       line-height: 1.6;
       overflow-x: hidden;
       background-image: 
-        radial-gradient(circle at 15% 20%, rgba(13, 148, 136, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 85% 70%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
-        linear-gradient(to bottom, #0A0F1D, #070B16);
+        radial-gradient(circle at 10% 15%, rgba(15, 118, 110, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(2, 132, 199, 0.05) 0%, transparent 45%),
+        linear-gradient(to bottom, #F8FAFC, #F1F5F9);
       min-height: 100vh;
     }
 
-    /* Subtle grid background */
+    /* Subtle industrial engineering graph paper grid */
     body::before {
       content: "";
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
       pointer-events: none;
       z-index: 0;
     }
@@ -67,15 +78,16 @@
       z-index: 1;
     }
 
-    /* Header Nav */
+    /* Top Sticky Navigation */
     header {
-      padding: 1.5rem 0;
-      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-light);
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(10, 15, 29, 0.85);
+      padding: 1rem 0;
+      box-shadow: var(--shadow-sm);
     }
 
     .nav-container {
@@ -87,29 +99,31 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.85rem;
+      text-decoration: none;
     }
 
     .brand-logo {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 8px;
-      background: linear-gradient(135deg, var(--teal-primary), var(--cyan-accent));
+      background: linear-gradient(135deg, var(--teal-primary), #0D9488);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 16px rgba(20, 184, 166, 0.4);
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
     }
 
     .brand-title {
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      color: #FFFFFF;
+      color: var(--text-heading);
+      line-height: 1.1;
     }
 
     .brand-title span {
-      color: var(--teal-neon);
+      color: var(--teal-primary);
     }
 
     .brand-subtitle {
@@ -117,23 +131,23 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--text-muted);
-      font-weight: 600;
+      font-weight: 700;
     }
 
-    .header-pills {
+    .nav-pills {
       display: flex;
       align-items: center;
       gap: 1rem;
     }
 
-    .status-pill {
+    .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: var(--green-bg);
+      border: 1px solid #86EFAC;
       color: var(--green-normal);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
       padding: 0.35rem 0.85rem;
       border-radius: 9999px;
@@ -145,41 +159,40 @@
       height: 7px;
       background-color: var(--green-normal);
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--green-normal);
       animation: pulse-ring 2s infinite ease-out;
     }
 
     @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.8; }
+      0% { transform: scale(0.95); opacity: 0.9; }
       50% { transform: scale(1.4); opacity: 0.4; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(0.95); opacity: 0.9; }
     }
 
     .btn-launch {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: linear-gradient(135deg, var(--teal-primary), #0F766E);
+      background: var(--teal-primary);
       color: #FFFFFF;
       text-decoration: none;
       font-weight: 700;
-      font-size: 0.88rem;
-      padding: 0.6rem 1.25rem;
+      font-size: 0.9rem;
+      padding: 0.65rem 1.35rem;
       border-radius: 8px;
-      border: 1px solid var(--teal-glow);
-      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
       transition: all 0.2s ease;
+      border: 1px solid #0D9488;
     }
 
     .btn-launch:hover {
-      background: linear-gradient(135deg, var(--teal-glow), var(--teal-primary));
+      background: #115E59;
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35);
     }
 
-    /* Hero Section */
+    /* Hero Keynote Section */
     .hero {
-      padding: 4.5rem 0 3rem 0;
+      padding: 4rem 0 3rem 0;
       text-align: center;
     }
 
@@ -187,55 +200,54 @@
       display: inline-flex;
       align-items: center;
       gap: 0.6rem;
-      background: rgba(30, 41, 59, 0.6);
-      border: 1px solid var(--border);
+      background: #FFFFFF;
+      border: 1px solid var(--border-medium);
       padding: 0.35rem 1rem;
       border-radius: 9999px;
       margin-bottom: 1.8rem;
+      box-shadow: var(--shadow-sm);
     }
 
     .track-tag {
       font-size: 0.74rem;
       font-weight: 700;
-      padding: 0.15rem 0.5rem;
+      padding: 0.2rem 0.6rem;
       border-radius: 4px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
     .track-pred {
-      background: rgba(20, 184, 166, 0.2);
-      color: var(--teal-neon);
+      background: var(--teal-surface);
+      color: var(--teal-primary);
       border: 1px solid var(--border-accent);
     }
 
     .track-brain {
-      background: rgba(6, 182, 212, 0.2);
+      background: #E0F2FE;
       color: var(--cyan-accent);
-      border: 1px solid rgba(6, 182, 212, 0.4);
+      border: 1px solid #BAE6FD;
     }
 
     .hero-title {
-      font-size: 3.4rem;
+      font-size: 3.5rem;
       font-weight: 800;
       letter-spacing: -0.035em;
       line-height: 1.15;
       margin-bottom: 1.3rem;
-      background: linear-gradient(180deg, #FFFFFF 30%, #CBD5E1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text-heading);
     }
 
     .hero-title .highlight {
-      background: linear-gradient(135deg, var(--teal-neon), var(--cyan-accent));
+      background: linear-gradient(135deg, var(--teal-primary), var(--cyan-accent));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .hero-lead {
-      max-width: 820px;
+      max-width: 840px;
       margin: 0 auto 2.5rem auto;
-      font-size: 1.2rem;
+      font-size: 1.22rem;
       color: var(--text-muted);
       line-height: 1.6;
     }
@@ -251,174 +263,447 @@
     .btn-primary-hero {
       display: inline-flex;
       align-items: center;
-      gap: 0.6rem;
-      background: linear-gradient(135deg, #0F766E, #0D9488);
+      gap: 0.65rem;
+      background: var(--teal-primary);
       color: #FFFFFF;
       text-decoration: none;
       font-size: 1.05rem;
       font-weight: 700;
-      padding: 0.85rem 1.85rem;
+      padding: 0.85rem 2rem;
       border-radius: 8px;
-      border: 1px solid var(--teal-neon);
-      box-shadow: 0 0 25px rgba(20, 184, 166, 0.45);
-      transition: all 0.25s ease;
+      box-shadow: 0 4px 16px rgba(15, 118, 110, 0.3);
+      transition: all 0.2s ease;
+      border: 1px solid #0D9488;
     }
 
     .btn-primary-hero:hover {
+      background: #115E59;
       transform: translateY(-2px);
-      box-shadow: 0 0 35px rgba(94, 234, 212, 0.6);
-      background: linear-gradient(135deg, #14B8A6, #0F766E);
+      box-shadow: 0 6px 22px rgba(15, 118, 110, 0.4);
     }
 
     .btn-secondary-hero {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(30, 41, 59, 0.5);
-      color: var(--text-main);
+      background: #FFFFFF;
+      color: var(--text-heading);
       text-decoration: none;
       font-size: 1.05rem;
       font-weight: 600;
       padding: 0.85rem 1.6rem;
       border-radius: 8px;
-      border: 1px solid var(--border);
+      border: 1.5px solid var(--border-medium);
       transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-secondary-hero:hover {
-      background: rgba(45, 62, 95, 0.7);
-      border-color: var(--teal-glow);
+      border-color: var(--teal-primary);
+      color: var(--teal-primary);
+      background: var(--bg-subtle);
     }
 
-    /* Live Waveform Visualizer simulation */
-    .waveform-visualizer {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      max-width: 900px;
-      margin: 0 auto;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .waveform-visualizer::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--teal-neon), var(--cyan-accent), transparent);
-    }
-
-    .wave-bars {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      height: 60px;
-    }
-
-    .wave-bar {
-      width: 4px;
-      background: linear-gradient(180deg, var(--teal-neon), var(--teal-primary));
-      border-radius: 99px;
-      animation: wave-anim 1.4s ease-in-out infinite alternate;
-    }
-
-    @keyframes wave-anim {
-      0% { height: 10%; opacity: 0.3; }
-      100% { height: 100%; opacity: 1; }
-    }
-
-    /* Stagger bar animations */
-    .wave-bar:nth-child(2n) { animation-delay: 0.15s; }
-    .wave-bar:nth-child(3n) { animation-delay: 0.3s; }
-    .wave-bar:nth-child(4n) { animation-delay: 0.45s; }
-    .wave-bar:nth-child(5n) { animation-delay: 0.6s; }
-    .wave-bar:nth-child(7n) { animation-delay: 0.75s; }
-
-    /* Key Performance Metric Tiles */
+    /* Key Performance Metric HUD (Light Luxury Style) */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 1.2rem;
-      margin: 3.5rem 0;
+      margin-bottom: 4rem;
     }
 
     .metric-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
       border-top: 3px solid var(--teal-primary);
       border-radius: 10px;
-      padding: 1.4rem;
+      padding: 1.5rem 1.2rem;
       text-align: center;
-      backdrop-filter: blur(8px);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
 
     .metric-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--teal-glow);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
     }
 
     .metric-val {
-      font-size: 2.2rem;
+      font-size: 2.3rem;
       font-weight: 800;
-      color: #FFFFFF;
-      letter-spacing: -0.02em;
+      color: var(--text-heading);
+      letter-spacing: -0.03em;
       margin-bottom: 0.2rem;
       font-family: var(--font-mono);
     }
 
-    .metric-val.teal { color: var(--teal-neon); }
-    .metric-val.cyan { color: var(--cyan-accent); }
+    .metric-val.teal { color: var(--teal-primary); }
+    .metric-val.blue { color: var(--cyan-accent); }
     .metric-val.green { color: var(--green-normal); }
 
     .metric-label {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.35rem;
     }
 
     .metric-desc {
-      font-size: 0.76rem;
-      color: var(--text-dim);
+      font-size: 0.78rem;
+      color: var(--text-light);
     }
 
-    /* Section Styling */
+    /* Section Headers */
     .section-title-wrap {
       text-align: center;
       margin-bottom: 3rem;
     }
 
     .section-tag {
-      font-size: 0.75rem;
+      font-size: 0.76rem;
       font-weight: 700;
-      color: var(--teal-neon);
+      color: var(--teal-primary);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.5rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
       display: inline-block;
+      background: var(--teal-surface);
+      padding: 0.2rem 0.7rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-accent);
     }
 
     .section-title {
-      font-size: 2.2rem;
+      font-size: 2.3rem;
       font-weight: 800;
-      letter-spacing: -0.02em;
-      color: #FFFFFF;
+      letter-spacing: -0.025em;
+      color: var(--text-heading);
     }
 
     .section-subtitle {
-      max-width: 680px;
+      max-width: 720px;
       margin: 0.6rem auto 0 auto;
       color: var(--text-muted);
-      font-size: 1rem;
+      font-size: 1.05rem;
     }
 
-    /* Core Features Grid */
+    /* Machinery Technical Schematic Section */
+    .machinery-showcase {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 2.2rem;
+      margin-bottom: 4.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .machinery-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 2.2rem;
+      align-items: center;
+    }
+
+    .schematic-box {
+      background: #F8FAFC;
+      border: 1.5px solid var(--border-medium);
+      border-radius: 10px;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .schematic-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .schematic-header strong {
+      color: var(--teal-primary);
+    }
+
+    .sensor-pin {
+      position: absolute;
+      background: var(--teal-primary);
+      color: #FFFFFF;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      border: 1px solid #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pin-pulse {
+      width: 6px;
+      height: 6px;
+      background: #5EEAD4;
+      border-radius: 50%;
+    }
+
+    .machinery-details h3 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-heading);
+      margin-bottom: 0.8rem;
+    }
+
+    .machinery-details p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      line-height: 1.6;
+    }
+
+    .component-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .component-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-left: 3px solid var(--teal-primary);
+      padding: 0.6rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.84rem;
+    }
+
+    .component-item strong {
+      color: var(--text-heading);
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    .component-item span {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+    }
+
+    /* Real Empirical Spectrogram Comparison Section */
+    .spectrogram-comparison {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 2.2rem;
+      margin-bottom: 4.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.8rem;
+      margin-top: 1.5rem;
+    }
+
+    .spec-card {
+      background: #F8FAFC;
+      border: 1.5px solid var(--border-light);
+      border-radius: 10px;
+      padding: 1.2rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .spec-card.healthy {
+      border-top: 4px solid var(--green-normal);
+    }
+
+    .spec-card.damaged {
+      border-top: 4px solid var(--red-anomaly);
+    }
+
+    .spec-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .spec-title-bar h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-heading);
+    }
+
+    .spec-img-box {
+      width: 100%;
+      height: 220px;
+      background: #0F172A;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.8rem;
+      border: 1px solid var(--border-light);
+    }
+
+    .spec-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .spec-annotation {
+      font-size: 0.82rem;
+      color: var(--text-body);
+      line-height: 1.5;
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+    }
+
+    /* Dual Track Presentation Cards */
+    .tracks-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 4.5rem;
+    }
+
+    .track-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 2.2rem;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .track-card.left {
+      border-top: 4px solid var(--teal-primary);
+    }
+
+    .track-card.right {
+      border-top: 4px solid var(--cyan-accent);
+    }
+
+    .track-badge {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .track-card.left .track-badge {
+      background: var(--teal-surface);
+      color: var(--teal-primary);
+      border: 1px solid var(--border-accent);
+    }
+
+    .track-card.right .track-badge {
+      background: #E0F2FE;
+      color: var(--cyan-accent);
+      border: 1px solid #BAE6FD;
+    }
+
+    .track-heading {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--text-heading);
+      margin-bottom: 0.8rem;
+    }
+
+    .track-list {
+      list-style: none;
+      margin-top: 1.2rem;
+    }
+
+    .track-list li {
+      position: relative;
+      padding-left: 1.6rem;
+      margin-bottom: 0.85rem;
+      font-size: 0.94rem;
+      color: var(--text-body);
+      line-height: 1.55;
+    }
+
+    .track-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--teal-primary);
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    /* ISO 13374 Pipeline Flow */
+    .pipeline-section {
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 2.5rem;
+      margin-bottom: 4.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.2rem;
+      margin-top: 2rem;
+    }
+
+    .flow-step-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border-light);
+      border-top: 3px solid var(--teal-primary);
+      border-radius: 8px;
+      padding: 1.4rem 0.9rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--teal-primary);
+      color: #FFFFFF;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .step-name {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-bottom: 0.3rem;
+    }
+
+    .step-desc {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Enterprise Features Grid */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -427,41 +712,38 @@
     }
 
     .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
       padding: 1.8rem;
-      position: relative;
-      overflow: hidden;
-      transition: all 0.25s ease;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
 
     .feature-card:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-accent);
-      transform: translateY(-4px);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
     }
 
     .feature-icon-box {
       width: 44px;
       height: 44px;
       border-radius: 8px;
-      background: rgba(20, 184, 166, 0.15);
-      border: 1px solid rgba(20, 184, 166, 0.3);
+      background: var(--teal-surface);
+      border: 1px solid var(--border-accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
-      color: var(--teal-neon);
-      margin-bottom: 1.2rem;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
     }
 
     .feature-name {
       font-size: 1.2rem;
       font-weight: 700;
-      color: #FFFFFF;
+      color: var(--text-heading);
       margin-bottom: 0.6rem;
-      letter-spacing: -0.01em;
     }
 
     .feature-p {
@@ -480,150 +762,22 @@
     .feature-chip {
       font-size: 0.72rem;
       font-family: var(--font-mono);
-      background: rgba(30, 41, 59, 0.8);
-      color: #E2E8F0;
+      background: var(--bg-subtle);
+      color: var(--text-body);
       padding: 0.2rem 0.55rem;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-light);
     }
 
-    /* Dual Track Spotlight Box */
-    .tracks-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 4.5rem;
-    }
-
-    .track-card {
-      background: linear-gradient(145deg, rgba(16, 24, 45, 0.9), rgba(10, 15, 30, 0.95));
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 2.2rem;
-      position: relative;
-    }
-
-    .track-card.left {
-      border-left: 4px solid var(--teal-glow);
-    }
-
-    .track-card.right {
-      border-left: 4px solid var(--cyan-accent);
-    }
-
-    .track-card-badge {
-      display: inline-block;
-      font-size: 0.74rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 0.3rem 0.75rem;
-      border-radius: 6px;
-      margin-bottom: 1rem;
-    }
-
-    .track-card.left .track-card-badge {
-      background: rgba(20, 184, 166, 0.15);
-      color: var(--teal-neon);
-      border: 1px solid rgba(20, 184, 166, 0.35);
-    }
-
-    .track-card.right .track-card-badge {
-      background: rgba(6, 182, 212, 0.15);
-      color: var(--cyan-accent);
-      border: 1px solid rgba(6, 182, 212, 0.35);
-    }
-
-    .track-heading {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #FFFFFF;
-      margin-bottom: 0.8rem;
-    }
-
-    .track-list {
-      list-style: none;
-      margin-top: 1.2rem;
-    }
-
-    .track-list li {
-      position: relative;
-      padding-left: 1.6rem;
-      margin-bottom: 0.7rem;
-      font-size: 0.92rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    .track-list li::before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--teal-neon);
-      font-weight: 800;
-    }
-
-    /* Architecture Pipeline Flow */
-    .pipeline-section {
-      background: rgba(16, 24, 45, 0.5);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2.5rem;
-      margin-bottom: 4.5rem;
-      text-align: center;
-    }
-
-    .flow-steps {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 1rem;
-      margin-top: 2rem;
-      position: relative;
-    }
-
-    .flow-step-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.2rem 0.8rem;
-      position: relative;
-    }
-
-    .step-num {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--teal-primary);
-      color: #FFFFFF;
-      font-size: 0.75rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.6rem;
-    }
-
-    .step-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: #FFFFFF;
-      margin-bottom: 0.3rem;
-    }
-
-    .step-desc {
-      font-size: 0.74rem;
-      color: var(--text-dim);
-    }
-
-    /* CTA Section */
+    /* Live Studio CTA Banner */
     .cta-banner {
-      background: linear-gradient(135deg, rgba(15, 118, 110, 0.25), rgba(6, 182, 212, 0.15));
-      border: 1px solid var(--teal-glow);
+      background: linear-gradient(135deg, #0F766E, #0D9488);
+      color: #FFFFFF;
       border-radius: 16px;
       padding: 3.5rem 2rem;
       text-align: center;
       margin-bottom: 4rem;
-      box-shadow: 0 0 35px rgba(20, 184, 166, 0.2);
+      box-shadow: 0 10px 30px rgba(15, 118, 110, 0.25);
     }
 
     .cta-title {
@@ -634,42 +788,68 @@
     }
 
     .cta-desc {
-      max-width: 650px;
+      max-width: 680px;
       margin: 0 auto 2rem auto;
-      color: var(--text-muted);
-      font-size: 1.05rem;
+      color: #E6FFFA;
+      font-size: 1.08rem;
+      line-height: 1.6;
+    }
+
+    .btn-cta-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: #FFFFFF;
+      color: var(--teal-primary);
+      text-decoration: none;
+      font-size: 1.15rem;
+      font-weight: 800;
+      padding: 1rem 2.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .btn-cta-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      background: #F0FDFA;
     }
 
     /* Footer */
     footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem 0;
+      border-top: 1px solid var(--border-light);
+      padding: 2.2rem 0;
       text-align: center;
-      color: var(--text-dim);
-      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      background: #FFFFFF;
     }
 
     footer a {
-      color: var(--teal-neon);
+      color: var(--teal-primary);
+      font-weight: 600;
       text-decoration: none;
     }
 
-    /* Responsive */
+    /* Responsive adjustments */
     @media (max-width: 900px) {
       .hero-title { font-size: 2.5rem; }
       .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .features-grid { grid-template-columns: 1fr; }
+      .machinery-grid { grid-template-columns: 1fr; }
+      .spec-grid { grid-template-columns: 1fr; }
       .tracks-container { grid-template-columns: 1fr; }
       .flow-steps { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Top Sticky Navigation -->
   <header>
     <div class="container nav-container">
-      <div class="brand">
+      <a href="#" class="brand">
         <div class="brand-logo">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M2 12h3l3-9 4 18 4-9h6"/>
@@ -679,16 +859,16 @@
           <div class="brand-title">PulseForge <span>AI</span></div>
           <div class="brand-subtitle">Industrial Acoustic Intelligence</div>
         </div>
-      </div>
+      </a>
 
-      <div class="header-pills">
-        <div class="status-pill">
+      <div class="nav-pills">
+        <div class="status-badge">
           <span class="pulse-dot"></span>
           <span>SYSTEM OPERATIONAL</span>
         </div>
         <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-launch">
           <span>Launch Live Studio</span>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
       </div>
     </div>
@@ -699,10 +879,10 @@
     <div class="container">
       <div class="hero-badge-group">
         <span class="track-tag track-pred">Track 1: Predictive Plant</span>
-        <span style="color: var(--text-dim);">•</span>
+        <span style="color: var(--text-light);">•</span>
         <span class="track-tag track-brain">Track 2: Factory Brain</span>
-        <span style="color: var(--text-dim);">•</span>
-        <span style="font-size: 0.74rem; color: #E2E8F0; font-weight: 600;">CloudCamp BD 2026</span>
+        <span style="color: var(--text-light);">•</span>
+        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700;">CloudCamp BD 2026</span>
       </div>
 
       <h1 class="hero-title">
@@ -719,73 +899,14 @@
           <span>Open Interactive Diagnostic Studio</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </a>
-        <a href="#architecture" class="btn-secondary-hero">
-          <span>Explore Architecture</span>
+        <a href="#schematic" class="btn-secondary-hero">
+          <span>Inspect Industrial Schematic</span>
         </a>
-      </div>
-
-      <!-- Live Simulated Audio Spectrum -->
-      <div class="waveform-visualizer">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted);">
-          <span>STREAM: 16 kHz / 16-BIT PCM INDUSTRIAL WAV</span>
-          <span style="color: var(--teal-neon);">128-BAND LOG-MEL SPECTROGRAM</span>
-        </div>
-        <div class="wave-bars">
-          <!-- 48 Audio Frequency Bars -->
-          <div class="wave-bar" style="height: 25%;"></div>
-          <div class="wave-bar" style="height: 40%;"></div>
-          <div class="wave-bar" style="height: 65%;"></div>
-          <div class="wave-bar" style="height: 85%;"></div>
-          <div class="wave-bar" style="height: 45%;"></div>
-          <div class="wave-bar" style="height: 70%;"></div>
-          <div class="wave-bar" style="height: 95%;"></div>
-          <div class="wave-bar" style="height: 60%;"></div>
-          <div class="wave-bar" style="height: 35%;"></div>
-          <div class="wave-bar" style="height: 50%;"></div>
-          <div class="wave-bar" style="height: 80%;"></div>
-          <div class="wave-bar" style="height: 100%;"></div>
-          <div class="wave-bar" style="height: 75%;"></div>
-          <div class="wave-bar" style="height: 45%;"></div>
-          <div class="wave-bar" style="height: 65%;"></div>
-          <div class="wave-bar" style="height: 90%;"></div>
-          <div class="wave-bar" style="height: 85%;"></div>
-          <div class="wave-bar" style="height: 55%;"></div>
-          <div class="wave-bar" style="height: 70%;"></div>
-          <div class="wave-bar" style="height: 40%;"></div>
-          <div class="wave-bar" style="height: 30%;"></div>
-          <div class="wave-bar" style="height: 60%;"></div>
-          <div class="wave-bar" style="height: 85%;"></div>
-          <div class="wave-bar" style="height: 75%;"></div>
-          <div class="wave-bar" style="height: 95%;"></div>
-          <div class="wave-bar" style="height: 65%;"></div>
-          <div class="wave-bar" style="height: 40%;"></div>
-          <div class="wave-bar" style="height: 80%;"></div>
-          <div class="wave-bar" style="height: 55%;"></div>
-          <div class="wave-bar" style="height: 90%;"></div>
-          <div class="wave-bar" style="height: 100%;"></div>
-          <div class="wave-bar" style="height: 70%;"></div>
-          <div class="wave-bar" style="height: 45%;"></div>
-          <div class="wave-bar" style="height: 60%;"></div>
-          <div class="wave-bar" style="height: 80%;"></div>
-          <div class="wave-bar" style="height: 95%;"></div>
-          <div class="wave-bar" style="height: 65%;"></div>
-          <div class="wave-bar" style="height: 40%;"></div>
-          <div class="wave-bar" style="height: 75%;"></div>
-          <div class="wave-bar" style="height: 50%;"></div>
-          <div class="wave-bar" style="height: 30%;"></div>
-          <div class="wave-bar" style="height: 65%;"></div>
-          <div class="wave-bar" style="height: 85%;"></div>
-          <div class="wave-bar" style="height: 45%;"></div>
-          <div class="wave-bar" style="height: 70%;"></div>
-          <div class="wave-bar" style="height: 35%;"></div>
-          <div class="wave-bar" style="height: 20%;"></div>
-          <div class="wave-bar" style="height: 15%;"></div>
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- Key Performance Benchmarks Grid -->
+  <!-- Key Performance Benchmarks HUD -->
   <div class="container">
     <div class="metrics-grid">
       <div class="metric-card">
@@ -795,7 +916,7 @@
       </div>
 
       <div class="metric-card">
-        <div class="metric-val cyan">&lt; 150 ms</div>
+        <div class="metric-val blue">&lt; 150 ms</div>
         <div class="metric-label">Inference Latency</div>
         <div class="metric-desc">Lightweight CPU edge execution; zero cloud lag</div>
       </div>
@@ -814,6 +935,165 @@
     </div>
   </div>
 
+  <!-- Industrial Machinery Schematic Section -->
+  <section class="container" id="schematic">
+    <div class="machinery-showcase">
+      <div class="machinery-grid">
+        <!-- Blueprint Schematic Vector Visual -->
+        <div class="schematic-box">
+          <div class="schematic-header">
+            <span>ASSET BLUEPRINT: <strong>CENTRIFUGAL INDUSTRIAL BLOWER (FAN_ID_00)</strong></span>
+            <span>ISO 13373-1 SENSOR SPEC</span>
+          </div>
+
+          <!-- Technical Schematic SVG -->
+          <svg viewBox="0 0 600 320" width="100%" height="auto" style="display: block;">
+            <defs>
+              <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#E2E8F0"/>
+                <stop offset="100%" stop-color="#CBD5E1"/>
+              </linearGradient>
+              <linearGradient id="housingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#F1F5F9"/>
+                <stop offset="100%" stop-color="#E2E8F0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Base Foundation -->
+            <rect x="40" y="270" width="520" height="24" rx="4" fill="#64748B" opacity="0.3"/>
+            <rect x="50" y="260" width="500" height="12" rx="2" fill="#94A3B8" opacity="0.6"/>
+
+            <!-- Electric Motor Housing (480V Induction) -->
+            <rect x="70" y="110" width="130" height="150" rx="6" fill="url(#metalGrad)" stroke="#475569" stroke-width="2"/>
+            <rect x="55" y="130" width="15" height="110" rx="3" fill="#64748B"/>
+            <line x1="85" y1="120" x2="85" y2="250" stroke="#94A3B8" stroke-width="2"/>
+            <line x1="105" y1="120" x2="105" y2="250" stroke="#94A3B8" stroke-width="2"/>
+            <line x1="125" y1="120" x2="125" y2="250" stroke="#94A3B8" stroke-width="2"/>
+            <line x1="145" y1="120" x2="145" y2="250" stroke="#94A3B8" stroke-width="2"/>
+            <line x1="165" y1="120" x2="165" y2="250" stroke="#94A3B8" stroke-width="2"/>
+            <text x="135" y="190" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="700" fill="#1E293B" text-anchor="middle">MOTOR 480V</text>
+
+            <!-- Drive Shaft & Pulley Transmission -->
+            <rect x="200" y="170" width="70" height="26" fill="#475569" rx="2"/>
+            <circle cx="280" cy="183" r="32" fill="url(#housingGrad)" stroke="#334155" stroke-width="3"/>
+            <circle cx="280" cy="183" r="14" fill="#0F766E"/>
+
+            <!-- Inboard Bearing Block (Monitored Node) -->
+            <rect x="330" y="150" width="45" height="70" rx="4" fill="url(#metalGrad)" stroke="#0F766E" stroke-width="2.5"/>
+            <circle cx="352" cy="185" r="12" fill="#0F766E" opacity="0.8"/>
+            <text x="352" y="138" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#0F766E" text-anchor="middle">BEARING 1</text>
+
+            <!-- Outboard Bearing Block -->
+            <rect x="400" y="150" width="45" height="70" rx="4" fill="url(#metalGrad)" stroke="#475569" stroke-width="2"/>
+            <circle cx="422" cy="185" r="12" fill="#475569" opacity="0.6"/>
+            <text x="422" y="138" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="700" fill="#475569" text-anchor="middle">BEARING 2</text>
+
+            <!-- Fan Scroll Casing & Centrifugal Impeller -->
+            <path d="M 460 70 A 90 90 0 1 0 540 220 L 550 260 L 460 260 Z" fill="url(#housingGrad)" stroke="#334155" stroke-width="3"/>
+            <!-- Impeller Blades -->
+            <circle cx="475" cy="160" r="45" fill="none" stroke="#0F766E" stroke-width="2" stroke-dasharray="8 6"/>
+            <circle cx="475" cy="160" r="16" fill="#334155"/>
+            <text x="475" y="164" font-family="'JetBrains Mono', monospace" font-size="8" font-weight="700" fill="#FFFFFF" text-anchor="middle">ROTOR</text>
+
+            <!-- Acoustic Transducer / Microphone (Positioned per ISO 13373-1) -->
+            <line x1="352" y1="85" x2="352" y2="140" stroke="#0F766E" stroke-width="2" stroke-dasharray="4 3"/>
+            <rect x="337" y="65" width="30" height="20" rx="4" fill="#0F766E" stroke="#FFFFFF" stroke-width="1.5"/>
+            <circle cx="352" cy="75" r="4" fill="#5EEAD4"/>
+
+            <!-- Acoustic Wavefront Emission -->
+            <path d="M 330 65 A 25 25 0 0 1 374 65" fill="none" stroke="#0D9488" stroke-width="1.5" opacity="0.7"/>
+            <path d="M 320 58 A 38 38 0 0 1 384 58" fill="none" stroke="#0D9488" stroke-width="1.5" opacity="0.4"/>
+          </svg>
+
+          <!-- Interactive Sensor Node Callouts -->
+          <div class="sensor-pin" style="top: 28px; left: 295px;">
+            <span class="pin-pulse"></span>
+            <span>16 kHz ACOUSTIC PROBE (CH_0)</span>
+          </div>
+        </div>
+
+        <!-- Machinery Inspection Diagnostics Details -->
+        <div class="machinery-details">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--teal-primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem;">
+            Acoustic Signal Physics
+          </div>
+          <h3>Continuous Machinery Health Monitoring</h3>
+          <p>
+            Unlike low-frequency broadband vibration (10–1,000 Hz) which only rises when mechanical surfaces are already damaged, acoustic emissions capture early harmonic stress and transient metal-to-metal contact in the 2 kHz – 8 kHz bands.
+          </p>
+
+          <div class="component-list">
+            <div class="component-item">
+              <strong>Inboard Bearing (SKF 6308)</strong>
+              <span>Micro-spalling raceway clicks (2-8 kHz)</span>
+            </div>
+            <div class="component-item">
+              <strong>Centrifugal Impeller</strong>
+              <span>Blade pass frequency & unbalance</span>
+            </div>
+            <div class="component-item">
+              <strong>V-Belt Transmission</strong>
+              <span>Harmonic slippage & belt fatigue</span>
+            </div>
+            <div class="component-item">
+              <strong>480V Induction Motor</strong>
+              <span>Stator asymmetry & magnetic hum</span>
+            </div>
+          </div>
+
+          <div style="background: var(--teal-surface); border: 1px solid var(--border-accent); padding: 0.8rem 1rem; border-radius: 8px; font-size: 0.85rem; color: var(--teal-primary);">
+            <strong>ISO 13373-1 Standard Compliance:</strong> Transducer positioned within 100mm of bearing load zone at 45° incident angle for optimal structure-borne and airborne acoustic capture.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Real Spectrogram Comparison Evidence -->
+  <section class="container">
+    <div class="spectrogram-comparison">
+      <div class="section-title-wrap" style="margin-bottom: 1.5rem;">
+        <span class="section-tag">Acoustic Signature Evidence</span>
+        <h2 class="section-title">Healthy Baseline vs. Mechanical Anomaly</h2>
+        <p class="section-subtitle">Real empirical 128-band log-mel spectrograms extracted from Hitachi MIMII industrial fan recordings.</p>
+      </div>
+
+      <div class="spec-grid">
+        <!-- Card 1: Normal Fan -->
+        <div class="spec-card healthy">
+          <div class="spec-title-bar">
+            <h4>Scenario 1: Healthy Operating Baseline</h4>
+            <span style="background: var(--green-bg); color: var(--green-normal); font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #86EFAC;">
+              NORMAL (0.0021 MSE)
+            </span>
+          </div>
+          <div class="spec-img-box">
+            <img src="assets/exploration_normal.png" alt="Healthy Fan Spectrogram" onerror="this.onerror=null; this.src='../results/plots/exploration_normal.png';">
+          </div>
+          <div class="spec-annotation">
+            <strong>Diagnostic Signature:</strong> Uniform continuous harmonic energy below 1,000 Hz representing nominal motor rotation and aerodynamic airflow. Zero transient acoustic clicks detected in high-frequency bearing bands.
+          </div>
+        </div>
+
+        <!-- Card 2: Bearing Anomaly -->
+        <div class="spec-card damaged">
+          <div class="spec-title-bar">
+            <h4>Scenario 2: Bearing Degradation Anomaly</h4>
+            <span style="background: var(--red-bg); color: var(--red-anomaly); font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #FCA5A5;">
+              ANOMALY (0.0048 MSE)
+            </span>
+          </div>
+          <div class="spec-img-box">
+            <img src="assets/exploration_abnormal.png" alt="Bearing Anomaly Spectrogram" onerror="this.onerror=null; this.src='../results/plots/exploration_abnormal.png';">
+          </div>
+          <div class="spec-annotation">
+            <strong>Diagnostic Signature:</strong> High-frequency transient impact bursts across 2,000 Hz – 8,000 Hz. The Autoencoder reconstruction error surges by 128% over the baseline threshold, triggering an immediate priority inspection.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Dual Track Synergy Spotlight -->
   <section class="container">
     <div class="section-title-wrap">
@@ -825,7 +1105,7 @@
     <div class="tracks-container">
       <!-- Track 1 Card -->
       <div class="track-card left">
-        <div class="track-card-badge">Primary Sub-Track: Predictive Plant</div>
+        <div class="track-badge">Primary Track: Predictive Plant</div>
         <h3 class="track-heading">Self-Validating Acoustic Anomaly AI</h3>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
           Traditional models fail in noisy plants. PulseForge uses an unsupervised PyTorch Autoencoder trained on healthy sound profiles, combined with physical signal gating and latent space familiarity.
@@ -840,7 +1120,7 @@
 
       <!-- Track 2 Card -->
       <div class="track-card right">
-        <div class="track-card-badge">Supporting Sub-Track: Factory Brain</div>
+        <div class="track-badge">Supporting Track: Factory Brain</div>
         <h3 class="track-heading">Autonomous AI Maintenance Copilot</h3>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
           Raw anomaly scores confuse operators. Our Factory Brain copilot, powered by Groq LPU running Llama 3.3 (70B), bridges the gap between acoustic telemetry and immediate floor action.
@@ -856,7 +1136,7 @@
   </section>
 
   <!-- ISO 13374 Pipeline Flow -->
-  <section class="container" id="architecture">
+  <section class="container">
     <div class="pipeline-section">
       <span class="section-tag">ISO 13374 Standard Conformance</span>
       <h2 class="section-title">Deterministic Processing Pipeline</h2>
@@ -896,10 +1176,10 @@
     </div>
   </section>
 
-  <!-- Complete Platform Features Showcase -->
+  <!-- Enterprise Capabilities Grid -->
   <section class="container">
     <div class="section-title-wrap">
-      <span class="section-tag">Enterprise Capabilities</span>
+      <span class="section-tag">Platform Capabilities</span>
       <h2 class="section-title">Built for Industrial Reliability</h2>
       <p class="section-subtitle">Explore the comprehensive features operational in PulseForge AI today.</p>
     </div>
@@ -979,18 +1259,18 @@
     </div>
   </section>
 
-  <!-- Call to Action Banner -->
+  <!-- Live Studio Call-to-Action Banner -->
   <section class="container">
     <div class="cta-banner">
       <h2 class="cta-title">Experience PulseForge AI Live in Production</h2>
       <p class="cta-desc">
         Launch the live interactive Streamlit application to test normal baselines, bearing degradation faults, and autonomous Groq LPU maintenance work order generation.
       </p>
-      <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-primary-hero" style="font-size: 1.15rem; padding: 1rem 2.5rem;">
+      <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-cta-launch">
         <span>Launch PulseForge Live Studio</span>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       </a>
-      <div style="margin-top: 1.2rem; font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono);">
+      <div style="margin-top: 1.2rem; font-size: 0.85rem; color: #CCFBF1; font-family: var(--font-mono);">
         Live URL: https://pulseforge-ai.streamlit.app • Zero installation required
       </div>
     </div>
