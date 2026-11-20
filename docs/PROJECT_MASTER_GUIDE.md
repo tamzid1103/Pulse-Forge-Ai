@@ -6,7 +6,7 @@
 ## Document Information
 - **File Name:** `docs/PROJECT_MASTER_GUIDE.md`
 - **Product:** PulseForge AI (Industrial Acoustic Intelligence & Autonomous Maintenance Platform)
-- **Live Demo Website:** `https://pulseforge-ai.streamlit.app`
+- **Live Demo Website:** `https://pulse-forge-ai.streamlit.app/`
 - **Presentation Showcase:** `presentation/index.html`
 - **GitHub Repository:** `https://github.com/tamzid1103/Pulse-Forge-Ai`
 - **Competition:** CloudCamp BD "International AI Builders Congress 2026"
@@ -82,7 +82,7 @@ PulseForge AI conforms strictly to **ISO 13374** (Condition Monitoring Architect
 
 ## 3. Live Website Walkthrough: Every Page, Section & Button Explained
 
-The live application at `https://pulseforge-ai.streamlit.app` is organized into **5 primary views** accessible via the dark navy sidebar.
+The live application at `https://pulse-forge-ai.streamlit.app/` is organized into **5 primary views** accessible via the dark navy sidebar.
 
 ---
 
@@ -279,7 +279,7 @@ The presentation landing page was designed specifically for your **video recordi
 6. **Dual Track Spotlight:**
    - Highlights why self-validating anomaly detection plus autonomous Llama 3.3 work order generation solve real factory challenges.
 7. **Call to Action (CTA) Banner:**
-   - Bold launch button that transitions the viewer directly to `https://pulseforge-ai.streamlit.app`.
+   - Bold launch button that transitions the viewer directly to `https://pulse-forge-ai.streamlit.app/`.
 
 ---
 
