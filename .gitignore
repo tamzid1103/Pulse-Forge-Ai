@@ -65,6 +65,10 @@ outputs/
 *.sqlite
 *.sqlite3
 
+# Video recording scripts and private rehearsal notes
+docs/*SCRIPT*.md
+docs/*script*.md
+
 # OS / editor
 .DS_Store
 Thumbs.db
