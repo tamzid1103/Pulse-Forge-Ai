@@ -216,7 +216,7 @@ with st.sidebar:
         st.markdown(
             """
             <div style="font-size: 0.74rem; color: #94A3B8; margin-bottom: 0.4rem; line-height: 1.4;">
-                Connect free Groq API key for live <code>llama-3.3-70b</code> maintenance reasoning.
+                Connect free Groq API key for live <code>llama-3.1-8b-instant</code> maintenance reasoning.
             </div>
             """,
             unsafe_allow_html=True,
@@ -237,7 +237,7 @@ with st.sidebar:
             st.markdown(
                 """
                 <div style="font-size: 0.75rem; color: #34D399; font-weight: 600; margin-top: 0.3rem;">
-                    ● Groq LPU Active (llama-3.3-70b)
+                    ● Groq LPU Active (llama-3.1-8b)
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -666,7 +666,7 @@ if selected_view == "Acoustic Diagnostic Studio":
                 )
             with col_stat:
                 if effective_groq_key:
-                    st.caption("🟢 **Groq LPU Connected:** Live reasoning via `llama-3.3-70b-versatile`.")
+                    st.caption("🟢 **Groq LPU Connected:** Live reasoning via `llama-3.1-8b-instant`.")
                 else:
                     st.caption("⚪ **Deterministic SOP Engine:** Offline industrial rule-based fallback active.")
 

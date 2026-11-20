@@ -115,7 +115,7 @@ The sidebar provides continuous equipment context, navigation, and model referen
    - Styled in dark slate (`#1E293B`) with white text and teal hover.
    - Clears the SQLite database history so you can start a clean demonstration recording.
 7. **"AI Copilot Settings (Groq)" Expander:**
-   - **Connection Indicator:** Shows `● Groq LPU Active (llama-3.3-70b)` when key is detected, or `○ Offline SOP Mode` as fallback.
+   - **Connection Indicator:** Shows `● Groq LPU Active (llama-3.1-8b)` when key is detected, or `○ Offline SOP Mode` as fallback.
    - **Groq API Key Input Field:** Allows entering a key directly for live testing (masked with `type="password"`).
 8. **Sidebar Footer:**
    - Displays Runtime (`PyTorch CPU Edge`), Release (`v1.0-preliminary`), and ISO 13374 architecture compliance note.

@@ -59,8 +59,8 @@ class IndustrialCopilot:
     in industrial ventilation fan SOPs and ISO 10816 condition monitoring standards.
     """
 
-    DEFAULT_MODEL = "llama-3.3-70b-versatile"
-    FAST_MODEL = "llama-3.1-8b-instant"
+    DEFAULT_MODEL = "llama-3.1-8b-instant"
+    FALLBACK_MODELS = ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"]
 
     def __init__(
         self,
@@ -259,24 +259,42 @@ Please generate the maintenance work order for the following diagnostic run:
 {telemetry}
 """
 
-            response = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                model=self.model,
-                temperature=0.1,
-                max_tokens=1000,
-                response_format={"type": "json_object"},
-            )
+            candidate_models = [self.model]
+            for fb in ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"]:
+                if fb not in candidate_models:
+                    candidate_models.append(fb)
 
-            response_content = response.choices[0].message.content
-            work_order = json.loads(response_content)
-            work_order["ai_engine"] = f"{self.model} (Groq LPU)"
-            work_order["created_at"] = datetime.datetime.now(
-                datetime.timezone.utc
-            ).strftime("%Y-%m-%d %H:%M:%S UTC")
-            return work_order
+            last_error: Exception | None = None
+            for model_name in candidate_models:
+                try:
+                    response = client.chat.completions.create(
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        model=model_name,
+                        temperature=0.1,
+                        max_tokens=1000,
+                        response_format={"type": "json_object"},
+                    )
+
+                    response_content = response.choices[0].message.content
+                    work_order = json.loads(response_content)
+                    work_order["ai_engine"] = f"{model_name} (Groq LPU)"
+                    work_order["created_at"] = datetime.datetime.now(
+                        datetime.timezone.utc
+                    ).strftime("%Y-%m-%d %H:%M:%S UTC")
+                    return work_order
+                except Exception as model_err:
+                    last_error = model_err
+                    logger.warning(
+                        "Groq work order generation with model %s failed (%s). Trying candidate fallback...",
+                        model_name,
+                        model_err,
+                    )
+                    continue
+
+            raise last_error or RuntimeError("All candidate Groq models failed.")
 
         except Exception as e:
             logger.warning("Groq work order generation failed (%s). Falling back to SOP.", e)
@@ -331,13 +349,33 @@ RULES FOR YOUR RESPONSES:
             for msg in messages:
                 groq_messages.append({"role": msg["role"], "content": msg["content"]})
 
-            response = client.chat.completions.create(
-                messages=groq_messages,
-                model=self.model,
-                temperature=0.2,
-                max_tokens=800,
-            )
-            return response.choices[0].message.content or "No response generated."
+            candidate_models = [self.model]
+            for fb in ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"]:
+                if fb not in candidate_models:
+                    candidate_models.append(fb)
+
+            last_error: Exception | None = None
+            for model_name in candidate_models:
+                try:
+                    response = client.chat.completions.create(
+                        messages=groq_messages,
+                        model=model_name,
+                        temperature=0.2,
+                        max_tokens=800,
+                    )
+                    content = response.choices[0].message.content
+                    if content and content.strip():
+                        return content
+                except Exception as model_err:
+                    last_error = model_err
+                    logger.warning(
+                        "Groq chat response with model %s failed (%s). Trying candidate fallback...",
+                        model_name,
+                        model_err,
+                    )
+                    continue
+
+            raise last_error or RuntimeError("All candidate Groq models failed.")
 
         except Exception as e:
             logger.warning("Groq chat failed (%s). Falling back to rule-based response.", e)

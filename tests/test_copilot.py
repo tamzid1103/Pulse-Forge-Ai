@@ -209,3 +209,33 @@ def test_mocked_groq_work_order(mock_groq_cls: MagicMock, sample_anomaly_result:
     assert wo["urgency"] == "PRIORITY_INSPECTION"
     assert "Groq LPU" in wo["ai_engine"]
     mock_client.chat.completions.create.assert_called_once()
+
+
+@patch("src.copilot.Groq")
+def test_copilot_model_fallback_on_404(
+    mock_groq_cls: MagicMock,
+    sample_anomaly_result: AnalysisResult,
+) -> None:
+    """Test that if the initial model fails (e.g. 404), copilot falls back to next candidate model."""
+    mock_client = MagicMock()
+    mock_groq_cls.return_value = mock_client
+
+    # First call fails with 404 model_not_found, second call succeeds
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(message=MagicMock(content="Fallback model response succeeded."))
+    ]
+    mock_client.chat.completions.create.side_effect = [
+        Exception("Error code: 404 - model_not_found"),
+        mock_response,
+    ]
+
+    copilot = IndustrialCopilot(api_key="gsk_mock_test_key", model="llama-3.3-70b-versatile")
+    resp = copilot.chat_response(
+        messages=[{"role": "user", "content": "Explain ISO 10816"}],
+        result=sample_anomaly_result,
+    )
+
+    assert "Fallback model response succeeded." in resp
+    assert mock_client.chat.completions.create.call_count == 2
+
