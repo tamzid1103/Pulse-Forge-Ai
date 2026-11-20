@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseForge AI — Industrial Acoustic Intelligence & Autonomous Maintenance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0A0F1D;
+      --bg-card: rgba(16, 24, 45, 0.75);
+      --bg-card-hover: rgba(22, 34, 62, 0.85);
+      --border: rgba(45, 62, 95, 0.6);
+      --border-accent: rgba(20, 184, 166, 0.5);
+      --teal-primary: #0D9488;
+      --teal-glow: #14B8A6;
+      --teal-neon: #5EEAD4;
+      --cyan-accent: #06B6D4;
+      --amber-alert: #F59E0B;
+      --red-anomaly: #EF4444;
+      --green-normal: #10B981;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(13, 148, 136, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 70%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
+        linear-gradient(to bottom, #0A0F1D, #070B16);
+      min-height: 100vh;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header Nav */
+    header {
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 15, 29, 0.85);
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--teal-primary), var(--cyan-accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(20, 184, 166, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #FFFFFF;
+    }
+
+    .brand-title span {
+      color: var(--teal-neon);
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .header-pills {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--green-normal);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      letter-spacing: 0.03em;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--green-normal);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--green-normal);
+      animation: pulse-ring 2s infinite ease-out;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .btn-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--teal-primary), #0F766E);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--teal-glow);
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-launch:hover {
+      background: linear-gradient(135deg, var(--teal-glow), var(--teal-primary));
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 4.5rem 0 3rem 0;
+      text-align: center;
+    }
+
+    .hero-badge-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      margin-bottom: 1.8rem;
+    }
+
+    .track-tag {
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .track-pred {
+      background: rgba(20, 184, 166, 0.2);
+      color: var(--teal-neon);
+      border: 1px solid var(--border-accent);
+    }
+
+    .track-brain {
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--cyan-accent);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+
+    .hero-title {
+      font-size: 3.4rem;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 1.3rem;
+      background: linear-gradient(180deg, #FFFFFF 30%, #CBD5E1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-title .highlight {
+      background: linear-gradient(135deg, var(--teal-neon), var(--cyan-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-lead {
+      max-width: 820px;
+      margin: 0 auto 2.5rem auto;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1.2rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .btn-primary-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(135deg, #0F766E, #0D9488);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 0.85rem 1.85rem;
+      border-radius: 8px;
+      border: 1px solid var(--teal-neon);
+      box-shadow: 0 0 25px rgba(20, 184, 166, 0.45);
+      transition: all 0.25s ease;
+    }
+
+    .btn-primary-hero:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(94, 234, 212, 0.6);
+      background: linear-gradient(135deg, #14B8A6, #0F766E);
+    }
+
+    .btn-secondary-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(30, 41, 59, 0.5);
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.85rem 1.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary-hero:hover {
+      background: rgba(45, 62, 95, 0.7);
+      border-color: var(--teal-glow);
+    }
+
+    /* Live Waveform Visualizer simulation */
+    .waveform-visualizer {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .waveform-visualizer::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--teal-neon), var(--cyan-accent), transparent);
+    }
+
+    .wave-bars {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 60px;
+    }
+
+    .wave-bar {
+      width: 4px;
+      background: linear-gradient(180deg, var(--teal-neon), var(--teal-primary));
+      border-radius: 99px;
+      animation: wave-anim 1.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes wave-anim {
+      0% { height: 10%; opacity: 0.3; }
+      100% { height: 100%; opacity: 1; }
+    }
+
+    /* Stagger bar animations */
+    .wave-bar:nth-child(2n) { animation-delay: 0.15s; }
+    .wave-bar:nth-child(3n) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(4n) { animation-delay: 0.45s; }
+    .wave-bar:nth-child(5n) { animation-delay: 0.6s; }
+    .wave-bar:nth-child(7n) { animation-delay: 0.75s; }
+
+    /* Key Performance Metric Tiles */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2rem;
+      margin: 3.5rem 0;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--teal-primary);
+      border-radius: 10px;
+      padding: 1.4rem;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--teal-glow);
+    }
+
+    .metric-val {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.2rem;
+      font-family: var(--font-mono);
+    }
+
+    .metric-val.teal { color: var(--teal-neon); }
+    .metric-val.cyan { color: var(--cyan-accent); }
+    .metric-val.green { color: var(--green-normal); }
+
+    .metric-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .metric-desc {
+      font-size: 0.76rem;
+      color: var(--text-dim);
+    }
+
+    /* Section Styling */
+    .section-title-wrap {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--teal-neon);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+    }
+
+    .section-subtitle {
+      max-width: 680px;
+      margin: 0.6rem auto 0 auto;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Core Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.8rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-accent);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: rgba(20, 184, 166, 0.15);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--teal-neon);
+      margin-bottom: 1.2rem;
+    }
+
+    .feature-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.6rem;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .feature-chip {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      background: rgba(30, 41, 59, 0.8);
+      color: #E2E8F0;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Dual Track Spotlight Box */
+    .tracks-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 4.5rem;
+    }
+
+    .track-card {
+      background: linear-gradient(145deg, rgba(16, 24, 45, 0.9), rgba(10, 15, 30, 0.95));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.2rem;
+      position: relative;
+    }
+
+    .track-card.left {
+      border-left: 4px solid var(--teal-glow);
+    }
+
+    .track-card.right {
+      border-left: 4px solid var(--cyan-accent);
+    }
+
+    .track-card-badge {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .track-card.left .track-card-badge {
+      background: rgba(20, 184, 166, 0.15);
+      color: var(--teal-neon);
+      border: 1px solid rgba(20, 184, 166, 0.35);
+    }
+
+    .track-card.right .track-card-badge {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan-accent);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+
+    .track-heading {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 0.8rem;
+    }
+
+    .track-list {
+      list-style: none;
+      margin-top: 1.2rem;
+    }
+
+    .track-list li {
+      position: relative;
+      padding-left: 1.6rem;
+      margin-bottom: 0.7rem;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .track-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--teal-neon);
+      font-weight: 800;
+    }
+
+    /* Architecture Pipeline Flow */
+    .pipeline-section {
+      background: rgba(16, 24, 45, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 4.5rem;
+      text-align: center;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    .flow-step-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 0.8rem;
+      position: relative;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--teal-primary);
+      color: #FFFFFF;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .step-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.3rem;
+    }
+
+    .step-desc {
+      font-size: 0.74rem;
+      color: var(--text-dim);
+    }
+
+    /* CTA Section */
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.25), rgba(6, 182, 212, 0.15));
+      border: 1px solid var(--teal-glow);
+      border-radius: 16px;
+      padding: 3.5rem 2rem;
+      text-align: center;
+      margin-bottom: 4rem;
+      box-shadow: 0 0 35px rgba(20, 184, 166, 0.2);
+    }
+
+    .cta-title {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 1rem;
+    }
+
+    .cta-desc {
+      max-width: 650px;
+      margin: 0 auto 2rem auto;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+    }
+
+    footer a {
+      color: var(--teal-neon);
+      text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-title { font-size: 2.5rem; }
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .features-grid { grid-template-columns: 1fr; }
+      .tracks-container { grid-template-columns: 1fr; }
+      .flow-steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <div class="container nav-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12h3l3-9 4 18 4-9h6"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">PulseForge <span>AI</span></div>
+          <div class="brand-subtitle">Industrial Acoustic Intelligence</div>
+        </div>
+      </div>
+
+      <div class="header-pills">
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span>SYSTEM OPERATIONAL</span>
+        </div>
+        <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-launch">
+          <span>Launch Live Studio</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Pitch Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge-group">
+        <span class="track-tag track-pred">Track 1: Predictive Plant</span>
+        <span style="color: var(--text-dim);">•</span>
+        <span class="track-tag track-brain">Track 2: Factory Brain</span>
+        <span style="color: var(--text-dim);">•</span>
+        <span style="font-size: 0.74rem; color: #E2E8F0; font-weight: 600;">CloudCamp BD 2026</span>
+      </div>
+
+      <h1 class="hero-title">
+        Acoustic Anomaly Detection &<br>
+        <span class="highlight">Autonomous Maintenance AI</span>
+      </h1>
+
+      <p class="hero-lead">
+        PulseForge AI listens to industrial rotating machinery to detect microscopic bearing degradation, blade fouling, and mechanical friction weeks before vibration thresholds breach—generating ISO 10816-grounded work orders with zero hallucinations.
+      </p>
+
+      <div class="hero-actions">
+        <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-primary-hero">
+          <span>Open Interactive Diagnostic Studio</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+        <a href="#architecture" class="btn-secondary-hero">
+          <span>Explore Architecture</span>
+        </a>
+      </div>
+
+      <!-- Live Simulated Audio Spectrum -->
+      <div class="waveform-visualizer">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted);">
+          <span>STREAM: 16 kHz / 16-BIT PCM INDUSTRIAL WAV</span>
+          <span style="color: var(--teal-neon);">128-BAND LOG-MEL SPECTROGRAM</span>
+        </div>
+        <div class="wave-bars">
+          <!-- 48 Audio Frequency Bars -->
+          <div class="wave-bar" style="height: 25%;"></div>
+          <div class="wave-bar" style="height: 40%;"></div>
+          <div class="wave-bar" style="height: 65%;"></div>
+          <div class="wave-bar" style="height: 85%;"></div>
+          <div class="wave-bar" style="height: 45%;"></div>
+          <div class="wave-bar" style="height: 70%;"></div>
+          <div class="wave-bar" style="height: 95%;"></div>
+          <div class="wave-bar" style="height: 60%;"></div>
+          <div class="wave-bar" style="height: 35%;"></div>
+          <div class="wave-bar" style="height: 50%;"></div>
+          <div class="wave-bar" style="height: 80%;"></div>
+          <div class="wave-bar" style="height: 100%;"></div>
+          <div class="wave-bar" style="height: 75%;"></div>
+          <div class="wave-bar" style="height: 45%;"></div>
+          <div class="wave-bar" style="height: 65%;"></div>
+          <div class="wave-bar" style="height: 90%;"></div>
+          <div class="wave-bar" style="height: 85%;"></div>
+          <div class="wave-bar" style="height: 55%;"></div>
+          <div class="wave-bar" style="height: 70%;"></div>
+          <div class="wave-bar" style="height: 40%;"></div>
+          <div class="wave-bar" style="height: 30%;"></div>
+          <div class="wave-bar" style="height: 60%;"></div>
+          <div class="wave-bar" style="height: 85%;"></div>
+          <div class="wave-bar" style="height: 75%;"></div>
+          <div class="wave-bar" style="height: 95%;"></div>
+          <div class="wave-bar" style="height: 65%;"></div>
+          <div class="wave-bar" style="height: 40%;"></div>
+          <div class="wave-bar" style="height: 80%;"></div>
+          <div class="wave-bar" style="height: 55%;"></div>
+          <div class="wave-bar" style="height: 90%;"></div>
+          <div class="wave-bar" style="height: 100%;"></div>
+          <div class="wave-bar" style="height: 70%;"></div>
+          <div class="wave-bar" style="height: 45%;"></div>
+          <div class="wave-bar" style="height: 60%;"></div>
+          <div class="wave-bar" style="height: 80%;"></div>
+          <div class="wave-bar" style="height: 95%;"></div>
+          <div class="wave-bar" style="height: 65%;"></div>
+          <div class="wave-bar" style="height: 40%;"></div>
+          <div class="wave-bar" style="height: 75%;"></div>
+          <div class="wave-bar" style="height: 50%;"></div>
+          <div class="wave-bar" style="height: 30%;"></div>
+          <div class="wave-bar" style="height: 65%;"></div>
+          <div class="wave-bar" style="height: 85%;"></div>
+          <div class="wave-bar" style="height: 45%;"></div>
+          <div class="wave-bar" style="height: 70%;"></div>
+          <div class="wave-bar" style="height: 35%;"></div>
+          <div class="wave-bar" style="height: 20%;"></div>
+          <div class="wave-bar" style="height: 15%;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Performance Benchmarks Grid -->
+  <div class="container">
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-val teal">0.9375</div>
+        <div class="metric-label">AUROC Accuracy</div>
+        <div class="metric-desc">Outperforms 0.9167 baseline on real MIMII dataset</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-val cyan">&lt; 150 ms</div>
+        <div class="metric-label">Inference Latency</div>
+        <div class="metric-desc">Lightweight CPU edge execution; zero cloud lag</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-val green">100 %</div>
+        <div class="metric-label">Fault Recall</div>
+        <div class="metric-desc">Zero mechanical anomalies missed across validation test</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-val teal">300+ t/s</div>
+        <div class="metric-label">Copilot Speed</div>
+        <div class="metric-desc">Groq LPU Llama 3.3 autonomous reasoning speed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dual Track Synergy Spotlight -->
+  <section class="container">
+    <div class="section-title-wrap">
+      <span class="section-tag">Dual Track Architecture</span>
+      <h2 class="section-title">End-to-End Plant Intelligence</h2>
+      <p class="section-subtitle">PulseForge AI merges physical edge anomaly detection with generative autonomous maintenance reasoning into a unified plant solution.</p>
+    </div>
+
+    <div class="tracks-container">
+      <!-- Track 1 Card -->
+      <div class="track-card left">
+        <div class="track-card-badge">Primary Sub-Track: Predictive Plant</div>
+        <h3 class="track-heading">Self-Validating Acoustic Anomaly AI</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Traditional models fail in noisy plants. PulseForge uses an unsupervised PyTorch Autoencoder trained on healthy sound profiles, combined with physical signal gating and latent space familiarity.
+        </p>
+        <ul class="track-list">
+          <li><strong>Signal Quality Self-Validation:</strong> Detects dead sensors, clipping saturation, and DC offset before AI inference.</li>
+          <li><strong>Unsupervised Autoencoder:</strong> Calculates 128-band reconstruction error without requiring rare labelled fault datasets.</li>
+          <li><strong>Latent Space Familiarity:</strong> Mahalanobis distance recognizes background noise shifts to prevent false alarms.</li>
+          <li><strong>4-State State Machine:</strong> Strictly outputs ISO 13374-compliant states (Normal, Possible Anomaly, Needs Review, Invalid).</li>
+        </ul>
+      </div>
+
+      <!-- Track 2 Card -->
+      <div class="track-card right">
+        <div class="track-card-badge">Supporting Sub-Track: Factory Brain</div>
+        <h3 class="track-heading">Autonomous AI Maintenance Copilot</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Raw anomaly scores confuse operators. Our Factory Brain copilot, powered by Groq LPU running Llama 3.3 (70B), bridges the gap between acoustic telemetry and immediate floor action.
+        </p>
+        <ul class="track-list">
+          <li><strong>1-Click Digital Work Orders:</strong> Generates structured tickets with Asset ID, priority urgency, and ISO 10816-3 zones.</li>
+          <li><strong>Mandatory OSHA LOTO Checklists:</strong> Automates Lockout/Tagout safety procedures prior to mechanical inspection.</li>
+          <li><strong>Domain Knowledge Grounding:</strong> Grounded in centrifugal fan standard operating procedures and bearing clearances.</li>
+          <li><strong>Interactive Reliability Chat:</strong> Real-time engineering advice for plant technicians at 300+ tokens/second.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ISO 13374 Pipeline Flow -->
+  <section class="container" id="architecture">
+    <div class="pipeline-section">
+      <span class="section-tag">ISO 13374 Standard Conformance</span>
+      <h2 class="section-title">Deterministic Processing Pipeline</h2>
+      <p class="section-subtitle">Every audio recording passes through a rigorous six-stage verification and decision pipeline.</p>
+
+      <div class="flow-steps">
+        <div class="flow-step-box">
+          <div class="step-num">1</div>
+          <div class="step-name">Audio Ingestion</div>
+          <div class="step-desc">16 kHz / 16-bit WAV decoding & mono downmix</div>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="step-num">2</div>
+          <div class="step-name">Quality Gate</div>
+          <div class="step-desc">Silence, clipping & DC bias physical checks</div>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="step-num">3</div>
+          <div class="step-name">Feature Extraction</div>
+          <div class="step-desc">128-band Log-mel spectrogram (STFT 1024)</div>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="step-num">4</div>
+          <div class="step-name">Autoencoder Scoring</div>
+          <div class="step-desc">Reconstruction MSE & Latent Distance</div>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="step-num">5</div>
+          <div class="step-name">Factory Brain Action</div>
+          <div class="step-desc">Groq LPU Llama 3.3 Work Order Generation</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Complete Platform Features Showcase -->
+  <section class="container">
+    <div class="section-title-wrap">
+      <span class="section-tag">Enterprise Capabilities</span>
+      <h2 class="section-title">Built for Industrial Reliability</h2>
+      <p class="section-subtitle">Explore the comprehensive features operational in PulseForge AI today.</p>
+    </div>
+
+    <div class="features-grid">
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">🎙️</div>
+        <h4 class="feature-name">Acoustic Diagnostic Studio</h4>
+        <p class="feature-p">Guided 3-stage workflow allowing technicians to upload plant recordings or test pre-calibrated baseline and fault scenarios with instant audio playback.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">Drag & Drop WAV</span>
+          <span class="feature-chip">Waveform Plot</span>
+          <span class="feature-chip">Log-Mel Heatmap</span>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">🤖</div>
+        <h4 class="feature-name">Factory Brain Copilot</h4>
+        <p class="feature-p">Powered by Groq LPU running Llama 3.3 (70B), our autonomous agent translates acoustic telemetry into OSHA LOTO work orders and technician guidance.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">Groq LPU</span>
+          <span class="feature-chip">Llama 3.3 70B</span>
+          <span class="feature-chip">JSON Work Orders</span>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">🏭</div>
+        <h4 class="feature-name">Plant Fleet Condition Monitoring</h4>
+        <p class="feature-p">Real-time condition monitoring across multi-line factory environments, aggregating equipment health indexes and active vibration alert states.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">Multi-Line Fleet</span>
+          <span class="feature-chip">Health Registry</span>
+          <span class="feature-chip">Alert Triage</span>
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">📊</div>
+        <h4 class="feature-name">Verified Model Benchmarks</h4>
+        <p class="feature-p">Empirical validation curves on Hitachi MIMII industrial fan recordings achieving 0.9375 AUROC, with loss curves and threshold calibration displays.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">0.9375 AUROC</span>
+          <span class="feature-chip">MIMII Dataset</span>
+          <span class="feature-chip">ROC Curves</span>
+        </div>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">🗄️</div>
+        <h4 class="feature-name">Audit History & Persistence</h4>
+        <p class="feature-p">Local SQLite metadata audit store capturing timestamped inspection logs, anomaly scores, and processing latency with CSV export compliance.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">SQLite Engine</span>
+          <span class="feature-chip">CSV Export</span>
+          <span class="feature-chip">ISO Traceability</span>
+        </div>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feature-card">
+        <div class="feature-icon-box">🔌</div>
+        <h4 class="feature-name">Model Context Protocol (MCP)</h4>
+        <p class="feature-p">Exposes PulseForge diagnostic and work order tools over standardized MCP, enabling external AI assistants (Claude, Antigravity) to query machines.</p>
+        <div class="feature-tags">
+          <span class="feature-chip">MCP Standard</span>
+          <span class="feature-chip">AI Tool Invocation</span>
+          <span class="feature-chip">Stdio / SSE</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Banner -->
+  <section class="container">
+    <div class="cta-banner">
+      <h2 class="cta-title">Experience PulseForge AI Live in Production</h2>
+      <p class="cta-desc">
+        Launch the live interactive Streamlit application to test normal baselines, bearing degradation faults, and autonomous Groq LPU maintenance work order generation.
+      </p>
+      <a href="https://pulseforge-ai.streamlit.app" target="_blank" class="btn-primary-hero" style="font-size: 1.15rem; padding: 1rem 2.5rem;">
+        <span>Launch PulseForge Live Studio</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+      <div style="margin-top: 1.2rem; font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono);">
+        Live URL: https://pulseforge-ai.streamlit.app • Zero installation required
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p><strong>PulseForge AI</strong> — Built for CloudCamp BD "International AI Builders Congress 2026"</p>
+      <p style="margin-top: 0.4rem;">Conforms to ISO 13374 Condition Monitoring and ISO 10816-3 Mechanical Vibration Standards.</p>
+      <p style="margin-top: 0.4rem;">
+        Source Code: <a href="https://github.com/tamzid1103/Pulse-Forge-Ai" target="_blank">github.com/tamzid1103/Pulse-Forge-Ai</a> • 
+        Live App: <a href="https://pulseforge-ai.streamlit.app" target="_blank">pulseforge-ai.streamlit.app</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
