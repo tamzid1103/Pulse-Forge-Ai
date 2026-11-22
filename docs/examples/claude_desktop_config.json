@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "pulseforge-ai": {
+      "command": "/media/tamzidul/F Drive/PracticeWebsite/Pulse-Forge-Ai/.venv/bin/python",
+      "args": [
+        "-m",
+        "src.mcp_server"
+      ],
+      "cwd": "/media/tamzidul/F Drive/PracticeWebsite/Pulse-Forge-Ai",
+      "env": {
+        "PYTHONPATH": "/media/tamzidul/F Drive/PracticeWebsite/Pulse-Forge-Ai",
+        "GROQ_API_KEY": ""
+      }
+    }
+  }
+}

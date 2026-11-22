@@ -22,7 +22,7 @@
 | M6 | Service layer, SQLite audit & Streamlit MVP | Must | ✅ Complete (5 demo files, multi-view dashboard) | M5 |
 | M7 | Preliminary submission dossier & video script | Must | ✅ Complete (Submitted to CloudCamp portal) | M6 |
 | M8 | Factory Brain AI Copilot (Groq LPU + SOP RAG) | Must | ✅ Complete (138/138 tests passing, zero-crash fallback) | M6 |
-| M9 | PulseForge Custom Model Context Protocol (MCP) Server | Should | 📋 Phase 2 (Finals) | M6/M8 |
+| M9 | PulseForge Custom Model Context Protocol (MCP) Server | Should | ✅ Complete (MCPServer 2.x, 5 tools, 4 resources, 2 prompts) | M6/M8 |
 | M10 | FastAPI REST & WebSocket Backend | Should | 📋 Phase 2 (Finals) | M6 |
 | M11 | Lovable React Industrial Enterprise Frontend | Should | 📋 Phase 2 (Finals) | M10 |
 | M12 | Multi-Machine Industrial Fleet Extension (Pumps, Valves) | Could | 📋 Phase 2 (Finals) | M4/M5 |
@@ -312,26 +312,23 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ### M9 — PulseForge Custom Model Context Protocol (MCP) Server
 
-**Status:** 📋 Phase 2 (Next Immediate Milestone)
+**Status:** ✅ Completed & Verified (18 tests in `tests/test_mcp_server.py`; 156/156 total passing tests)
 
-**Objective:** Expose PulseForge diagnostic and copilot capabilities as a standardized Model Context Protocol (MCP) server (`src/mcp_server.py`) over Stdio and SSE transports, allowing external AI coding and operations agents (Antigravity, Claude, Cursor) to directly query machine health and generate work orders.
+**Objective:** Expose PulseForge diagnostic and copilot capabilities as a standardized Model Context Protocol (MCP 2.x) server (`src/mcp_server.py`) over Stdio and SSE transports, allowing external AI coding and operations agents (Antigravity, Claude, Cursor) to directly query machine health and generate work orders.
 
 **Files:**
 - `src/mcp_server.py`
 - `tests/test_mcp_server.py`
 - `docs/MCP_SPECIFICATION.md`
+- `docs/examples/claude_desktop_config.json`
+- `docs/examples/antigravity_mcp_config.json`
 
-**Key Tasks:**
-1. Define MCP Tools:
-   - `analyze_fan_audio(audio_path: str)`: Executes 6-stage acoustic pipeline; returns 4-state decision and metrics.
-   - `inspect_signal_quality(audio_path: str)`: Tests RMS, clipping, and duration flags.
-   - `get_machine_telemetry(machine_id: str)`: Returns operational baselines and recent inspection history.
-   - `generate_maintenance_ticket(machine_id: str, decision_status: str)`: Generates OSHA-grounded work order.
-2. Define MCP Resources:
-   - `pulseforge://fleet/status`: Current health status of all monitored plant equipment.
-   - `pulseforge://standards/iso10816`: ISO vibration/acoustic severity reference tables.
-3. Support Stdio transport for local IDE agents and SSE transport for networked orchestrators.
-4. Author automated unit and protocol integration tests.
+**Accomplished:**
+1. Built MCP 2.x server with 5 Tools: `analyze_fan_audio`, `inspect_signal_quality`, `get_machine_telemetry`, `generate_maintenance_work_order`, `list_demo_scenarios`.
+2. Implemented 4 Resources: `pulseforge://fleet/status`, `pulseforge://standards/iso10816`, `pulseforge://standards/sop/fan_maintenance`, `pulseforge://scenarios/catalog`.
+3. Implemented 2 Prompts: `triage_acoustic_anomaly`, `osha_loto_compliance_check`.
+4. Fully tested with 18 automated tests in `tests/test_mcp_server.py` bringing total project tests to 156.
+5. Authored client configuration examples for Claude Desktop and Antigravity IDE.
 
 ---
 
@@ -457,7 +454,7 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 | M6 | ✅ Complete | 17 service, persistence, and UI tests passed (129 tests total); `src/service.py` pipeline, SQLite audit trail (`src/persistence.py`), 5 curated demo audio scenarios in `demo_audio/`, and multi-view Streamlit dashboard (`app/dashboard.py`) | None. Ready for M7 |
 | M7 | ✅ Complete | Authored `docs/PRELIMINARY_VIDEO_SCRIPT.md` (2:45 min walkthrough) and `docs/PRELIMINARY_SUBMISSION_DOSSIER.md`; recorded video demo; preliminary submission officially completed on CloudCamp portal | None. Ready for M8 |
 | M8 | ✅ Complete | 9 copilot tests passed (138 tests total); `src/copilot.py` with Groq LPU API (`llama-3.1-8b-instant`), automated fallback cascade, domain-grounded fan SOPs, and deterministic offline fallback; 1-click work order generation in UI | None. Ready for Phase 2 (Finals) |
-| M9 | 📋 Phase 2 | Model Context Protocol server specification drafted; ready for implementation | Begin M9 MCP server implementation |
+| M9 | ✅ Complete | 18 MCP tests passed (156 tests total); `src/mcp_server.py` with 5 tools, 4 resources, 2 prompts; Stdio/SSE transports; Claude & Antigravity client configs | None. Ready for M10 |
 | M10 | 📋 Phase 2 | FastAPI REST & WebSocket backend | Depends on M6 service |
 | M11 | 📋 Phase 2 | Lovable React enterprise frontend | Depends on M10 API |
 | M12 | 📋 Phase 2 | Multi-machine fleet expansion (pumps, valves, slide rails) | Planned for Finals |

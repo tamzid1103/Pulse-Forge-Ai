@@ -1,0 +1,21 @@
+{
+  "name": "pulseforge-ai",
+  "command": "python",
+  "args": ["-m", "src.mcp_server"],
+  "env": {
+    "PYTHONPATH": "."
+  },
+  "tools": [
+    "analyze_fan_audio",
+    "inspect_signal_quality",
+    "get_machine_telemetry",
+    "generate_maintenance_work_order",
+    "list_demo_scenarios"
+  ],
+  "resources": [
+    "pulseforge://fleet/status",
+    "pulseforge://standards/iso10816",
+    "pulseforge://standards/sop/fan_maintenance",
+    "pulseforge://scenarios/catalog"
+  ]
+}

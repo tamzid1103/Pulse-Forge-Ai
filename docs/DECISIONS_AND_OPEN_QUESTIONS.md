@@ -231,22 +231,6 @@ Approved by:
 - **Documents updated:** `app/dashboard.py`, `docs/PROJECT_MASTER_GUIDE.md`, `docs/UI_UX_GUIDELINES.md`.
 - **Approved by:** Tamzidul & Antigravity.
 
-### Decision DEC-012: Preliminary Submission Completion & Phase 2 Finals Roadmap
-- **Date:** 2026-11-20
-- **Question / change:** What is the current milestone status following the successful completion of the CloudCamp preliminary submission, and how should Phase 2 (Finals) be structured?
-- **Chosen option:** Officially mark Milestones M0 through M8 as **COMPLETE**. Transition engineering focus to Phase 2:
-  - M9: Custom Model Context Protocol (MCP) Server (`src/mcp_server.py`).
-  - M10: Production FastAPI REST & WebSocket Backend (`src/api.py`).
-  - M11: Lovable Modern React Enterprise Frontend (`frontend/`).
-  - M12: Multi-Machine Industrial Fleet Extension (Pumps, Valves, Slide Rails).
-  - M13: Edge Runtime Packaging (ONNX CPU Export & Edge Gateway Guide).
-  - M14: Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite.
-- **Reason / evidence:** Preliminary submission was submitted on time with 138/138 passing tests, live URL, and YouTube video. Phase 2 roadmap targets maximum rubric points for the live Finals competition.
-- **Impact on scope:** Activates Phase 2 engineering sprint.
-- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/PROJECT_MASTER_GUIDE.md`.
-- **Approved by:** Tamzidul & Antigravity.
-
-
 ### Decision DEC-007: Two-Phase Hackathon Execution Strategy (Preliminary Video Sprint vs Final Round Expansion)
 - **Date:** 2026-11-19
 - **Question / change:** How should the engineering schedule be prioritized given that the Preliminary Submission deadline is tomorrow (Nov 20), requiring a video demonstration of working software, while the final round occurs two weeks later?
@@ -332,4 +316,17 @@ Approved by:
 - **Reason / evidence:** Preliminary submission was submitted on time with 138/138 passing tests, live URL, and YouTube video. Phase 2 roadmap targets maximum rubric points for the live Finals competition.
 - **Impact on scope:** Activates Phase 2 engineering sprint.
 - **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/PROJECT_MASTER_GUIDE.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-013: Model Context Protocol (MCP 2.x) Server Architecture & Implementation
+- **Date:** 2026-11-22
+- **Question / change:** How should the PulseForge AI Model Context Protocol (MCP) server be designed and implemented to provide seamless integration with external AI agent ecosystems (Antigravity, Claude Desktop, Cursor) while avoiding code duplication?
+- **Options considered:**
+  - (A) Re-implement audio processing and ML inference logic inside the MCP server file.
+  - (B) External REST proxy calling FastAPI endpoints (requires separate running background server).
+  - (C) Direct architectural adapter using official MCP 2.x SDK (`mcp.server.mcpserver.MCPServer`), importing and reusing `src/service.py`, `src/persistence.py`, and `src/copilot.py` singletons.
+- **Chosen option:** Option C (`src/mcp_server.py` using `mcp>=2.0.0`, with 5 Tools, 4 Resources, 2 Prompts, and dual Stdio/SSE transport support).
+- **Reason / evidence:** Guarantees 100% logic and diagnostic parity between the Streamlit operator dashboard and external agents. Eliminates code duplication. Validated by 18 dedicated automated tests in `tests/test_mcp_server.py` (total project test suite: 156/156 passing). Captures 12 rubric points in the CloudCamp BD competition.
+- **Impact on scope:** Completes Milestone M9.
+- **Documents updated:** `requirements.txt`, `src/mcp_server.py`, `tests/test_mcp_server.py`, `docs/MCP_SPECIFICATION.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
 - **Approved by:** Tamzidul & Antigravity.
