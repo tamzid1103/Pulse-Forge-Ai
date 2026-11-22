@@ -12,3 +12,4 @@ plotly
 pytest
 groq>=0.9.0
 python-dotenv>=1.0.0
+mcp>=2.0.0
