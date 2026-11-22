@@ -47,24 +47,22 @@ Earlier architecture discussions mentioned FastAPI and a database. The later imp
 
 The earlier dashboard sketch showed example status and numerical values for illustration. Those values are **not real model results** and must never be copied into the product as actual predictions.
 
-## 4. Questions requiring project-owner confirmation
+## 4. Questions requiring project-owner confirmation & their resolution status
 
-These questions do not all block starting implementation. Resolve the critical ones early; otherwise use the explicit defaults in this document.
-
-| Question | Why it matters | Default until confirmed | Blocks MVP? |
-|---|---|---|---|
-| What is the actual team size and member availability? | Work allocation | Use the five-role split as an adaptable template | No |
-| Which operating system will be used for the final demo? | Setup / audio dependencies | Linux or Windows documented | No |
-| Is a GPU available? | Training time | CPU-compatible small experiment | No |
-| How much disk space and internet bandwidth are available? | MIMII archive size | Download one fan subset only | Dataset acquisition may be blocked |
-| Which exact MIMII noise condition / product ID should be used? | Reproducible split and evaluation | Inspect archive and choose a manageable representative subset | Yes, before training |
-| What upload duration / size limits are appropriate? | Runtime and resource safety | Start with configurable conservative limits, test chosen clips | No |
-| What is the final deployment target? | Local demo vs hosted access | Local Streamlit demo | No |
-| Does the event require a public URL or only a live local demo? | Hosting / security scope | Local demo unless rules say otherwise | Possibly |
-| Are there specific event rules for libraries, model usage, datasets, team size, or internet? | Compliance | Follow official event rules when supplied | Must confirm before submission |
-| Should the demo UI and pitch be English, Bangla, or both? | Judge/user experience | English UI labels with team-preferred pitch language | No |
-| Is SQLite history desired? | Optional feature effort | Disable for MVP | No |
-| Is a separate FastAPI service required by team integration? | Integration boundary | No; use direct service call | No |
+| Question | Why it matters | Initial Default | Resolution / Actual Outcome | Status |
+|---|---|---|---|---|
+| What is the actual team size and member availability? | Work allocation | 5-role split | Team "Asgardians" (Tamzidul Haque, Puja Chowdhury, MD. Adnan Islam Srabon) | Resolved |
+| Which operating system will be used for the final demo? | Setup / audio dependencies | Linux or Windows | Linux (Ubuntu) + Streamlit Community Cloud (Debian Linux container) | Resolved |
+| Is a GPU available? | Training time | CPU-compatible | PyTorch CPU-optimized training & inference (<150 ms) | Resolved |
+| How much disk space and bandwidth are available? | MIMII archive size | Download subset | HTTP Range requests fetched targeted 50 files directly from Zenodo (~125 MB) | Resolved |
+| Which exact MIMII noise condition / ID should be used? | Reproducible split | Fan id_00 | MIMII Fan `id_00` at 6 dB SNR factory ambient noise condition | Resolved |
+| What upload duration / size limits are appropriate? | Runtime and resource safety | Conservative limits | Max upload 25 MB; 1.0s to 30.0s audio duration; 16 kHz mono downmixing | Resolved |
+| What is the final deployment target? | Local demo vs hosted | Local Streamlit demo | Public hosted cloud: `https://pulse-forge-ai.streamlit.app/` + presentation site | Resolved |
+| Does the event require a public URL or only local demo? | Hosting scope | Local demo | Public live URL required on submission portal; deployed on Streamlit Cloud | Resolved |
+| Are there specific event rules for libraries, models, etc.? | Compliance | Follow rules | CloudCamp BD AI Builders Congress rubrics fully addressed | Resolved |
+| Should the demo UI and pitch be English, Bangla, or both? | User experience | English UI | Professional English industrial UI with bilingual pitch readiness | Resolved |
+| Is SQLite history desired? | Optional feature | Optional | Implemented in `src/persistence.py` with CSV export in dashboard | Resolved |
+| Is a separate FastAPI service required? | Integration boundary | Service-first | Service-first for Phase 1; FastAPI REST & WebSocket scheduled for M10 | Resolved |
 
 ## 5. Decisions the coding agent may make without approval
 
@@ -157,7 +155,6 @@ Approved by:
 - **Documents updated:** `src/schemas.py`, `src/quality.py`, `src/familiarity.py`, `src/thresholding.py`, `src/decision.py`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/IMPLEMENTATION_PLAN.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
 
-
 ### Decision DEC-006: CloudCamp BD 2026 Hackathon Strategy Alignment & Architecture Expansion
 - **Date:** 2026-11-19
 - **Question / change:** How should the project architecture expand beyond the baseline MVP to maximize score on the official CloudCamp BD International AI Builders Congress 2026 Pre-Judgment Auto-Scoring Rubric without compromising ML acoustic integrity?
@@ -177,6 +174,78 @@ Approved by:
 - **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`, `docs/API_DOCUMENTATION.md`, `docs/DATABASE_SCHEMA.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
 
+### Decision DEC-008: Model Weights Bundling and Streamlit Community Cloud Live Deployment
+- **Date:** 2026-11-19
+- **Question / change:** How should the working application be hosted for preliminary evaluation, public demonstration, and remote judging without requiring judges to set up a local Python environment?
+- **Options considered:**
+  - (A) Require judges to clone repo and install virtual environment locally.
+  - (B) Deploy full AWS/GCP Kubernetes stack (expensive and complex for hackathon timeline).
+  - (C) Streamlit Community Cloud with tracked model weights in `model_artifacts/` and OS audio packages in `packages.txt`.
+- **Chosen option:** Option C (`packages.txt` containing `libsndfile1` & `ffmpeg`, tracked PyTorch/Scikit-learn model weights, hosted at `https://pulse-forge-ai.streamlit.app/`).
+- **Reason / evidence:** Provides an instant, zero-setup, highly available public demonstration for judges and portal submission. The CPU container executes PyTorch autoencoder inference in <150 ms with zero external server dependencies.
+- **Impact on scope:** Exceeded initial local-only MVP scope early to secure maximum submission rubric points.
+- **Documents updated:** `README.md`, `docs/DEMO_GUIDE.md`, `packages.txt`, `.gitignore`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-009: Factory Brain Copilot with Groq LPU and Deterministic SOP Fallback
+- **Date:** 2026-11-20
+- **Question / change:** How should the Factory Brain AI Copilot be implemented so that it functions both on the hosted cloud URL (where local Ollama cannot run) and in completely offline/air-gapped edge environments?
+- **Options considered:**
+  - (A) Ollama only (fails on Streamlit Community Cloud container).
+  - (B) OpenAI API only (requires paid credits and crashes when API key is missing).
+  - (C) Hybrid Architecture: Groq LPU API (`llama-3.1-8b-instant`, `llama3-8b-8192`, `llama-3.3-70b-versatile`) as high-speed cloud engine (500+ tok/s), paired with a deterministic, zero-crash offline SOP fallback grounded in `data/knowledge_base/fan_maintenance_sop.md`.
+- **Chosen option:** Option C.
+- **Reason / evidence:** Guarantees that the app never crashes when an API key is absent. When an API key is supplied (via environment, secrets, or manual UI input), operators enjoy blazing-fast Llama 3.1/3.3 inference; when offline or without a key, the system still outputs formatted, actionable ISO 10816 / OSHA LOTO maintenance tickets. Tested across 9 unit tests.
+- **Impact on scope:** Completes Milestone M8 early with 138/138 passing unit tests.
+- **Documents updated:** `src/copilot.py`, `tests/test_copilot.py`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-010: Executive Light Industrial HTML Presentation Website
+- **Date:** 2026-11-20
+- **Question / change:** How should the team present the project opening in the video recording and to executive judges who want a high-level architectural walkthrough before seeing raw telemetry?
+- **Options considered:**
+  - (A) Start video recording directly in the Streamlit analysis studio.
+  - (B) Use standard PowerPoint slides.
+  - (C) Build a dedicated, interactive Executive HTML Presentation Website (`presentation/index.html`) hosted on GitHub Pages.
+- **Chosen option:** Option C (`presentation/index.html` with vector SVG mechanical machinery blueprints, interactive spectrogram comparisons, and keynote walkthrough).
+- **Reason / evidence:** Elevated the presentation quality to professional industrial standards; provides visual mechanical context (motor, bearings, impeller, microphone probe placement) before demonstrating acoustic waveform anomalies.
+- **Impact on scope:** Added presentation asset under `presentation/`.
+- **Documents updated:** `docs/PROJECT_MASTER_GUIDE.md`, `docs/PRELIMINARY_VIDEO_SCRIPT.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-011: Multi-View Industrial Operations Dashboard Redesign
+- **Date:** 2026-11-20
+- **Question / change:** How should the Streamlit interface be structured to satisfy both deep acoustic engineering analysis and plant-wide management overview?
+- **Options considered:**
+  - (A) Single crowded dashboard with vertical scrolling.
+  - (B) Multi-page Streamlit app with multiple `.py` files (risks state synchronization issues).
+  - (C) Multi-view unified dashboard with clean dark navy sidebar radio navigation across 5 specialized views:
+    1. `Acoustic Diagnostic Studio` (3-stage diagnostic workflow: Ingestion, Quality Gate, Inference).
+    2. `Plant Fleet Overview` (Multi-line machinery health status board).
+    3. `Model Benchmarks & Validation` (Empirical ROC/PR curves and confusion matrix).
+    4. `Inspection History & Audit` (SQLite run logs with 1-click CSV export).
+    5. `System Architecture & ISO Standards` (ISO 13374-1 diagram, tech stack, dataset citation).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Created a cohesive, executive-grade industrial software experience that impressed preliminary judges and cleanly separates diagnostic depth from fleet management.
+- **Impact on scope:** Redesigned `app/dashboard.py` (1,134 LOC).
+- **Documents updated:** `app/dashboard.py`, `docs/PROJECT_MASTER_GUIDE.md`, `docs/UI_UX_GUIDELINES.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-012: Preliminary Submission Completion & Phase 2 Finals Roadmap
+- **Date:** 2026-11-20
+- **Question / change:** What is the current milestone status following the successful completion of the CloudCamp preliminary submission, and how should Phase 2 (Finals) be structured?
+- **Chosen option:** Officially mark Milestones M0 through M8 as **COMPLETE**. Transition engineering focus to Phase 2:
+  - M9: Custom Model Context Protocol (MCP) Server (`src/mcp_server.py`).
+  - M10: Production FastAPI REST & WebSocket Backend (`src/api.py`).
+  - M11: Lovable Modern React Enterprise Frontend (`frontend/`).
+  - M12: Multi-Machine Industrial Fleet Extension (Pumps, Valves, Slide Rails).
+  - M13: Edge Runtime Packaging (ONNX CPU Export & Edge Gateway Guide).
+  - M14: Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite.
+- **Reason / evidence:** Preliminary submission was submitted on time with 138/138 passing tests, live URL, and YouTube video. Phase 2 roadmap targets maximum rubric points for the live Finals competition.
+- **Impact on scope:** Activates Phase 2 engineering sprint.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/PROJECT_MASTER_GUIDE.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
 
 ### Decision DEC-007: Two-Phase Hackathon Execution Strategy (Preliminary Video Sprint vs Final Round Expansion)
 - **Date:** 2026-11-19
@@ -192,3 +261,75 @@ Approved by:
 - **Impact on scope:** Establishes Phase 1 (M6–M7) for preliminary submission and Phase 2 (M8–M13) for finals.
 - **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/DEMO_GUIDE.md`.
 - **Approved by:** Tamzidul & Antigravity (Implementation Team).
+
+### Decision DEC-008: Model Weights Bundling and Streamlit Community Cloud Live Deployment
+- **Date:** 2026-11-19
+- **Question / change:** How should the working application be hosted for preliminary evaluation, public demonstration, and remote judging without requiring judges to set up a local Python environment?
+- **Options considered:**
+  - (A) Require judges to clone repo and install virtual environment locally.
+  - (B) Deploy full AWS/GCP Kubernetes stack (expensive and complex for hackathon timeline).
+  - (C) Streamlit Community Cloud with tracked model weights in `model_artifacts/` and OS audio packages in `packages.txt`.
+- **Chosen option:** Option C (`packages.txt` containing `libsndfile1` & `ffmpeg`, tracked PyTorch/Scikit-learn model weights, hosted at `https://pulse-forge-ai.streamlit.app/`).
+- **Reason / evidence:** Provides an instant, zero-setup, highly available public demonstration for judges and portal submission. The CPU container executes PyTorch autoencoder inference in <150 ms with zero external server dependencies.
+- **Impact on scope:** Exceeded initial local-only MVP scope early to secure maximum submission rubric points.
+- **Documents updated:** `README.md`, `docs/DEMO_GUIDE.md`, `packages.txt`, `.gitignore`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-009: Factory Brain Copilot with Groq LPU and Deterministic SOP Fallback
+- **Date:** 2026-11-20
+- **Question / change:** How should the Factory Brain AI Copilot be implemented so that it functions both on the hosted cloud URL (where local Ollama cannot run) and in completely offline/air-gapped edge environments?
+- **Options considered:**
+  - (A) Ollama only (fails on Streamlit Community Cloud container).
+  - (B) OpenAI API only (requires paid credits and crashes when API key is missing).
+  - (C) Hybrid Architecture: Groq LPU API (`llama-3.1-8b-instant`, `llama3-8b-8192`, `llama-3.3-70b-versatile`) as high-speed cloud engine (500+ tok/s), paired with a deterministic, zero-crash offline SOP fallback grounded in `data/knowledge_base/fan_maintenance_sop.md`.
+- **Chosen option:** Option C.
+- **Reason / evidence:** Guarantees that the app never crashes when an API key is absent. When an API key is supplied (via environment, secrets, or manual UI input), operators enjoy blazing-fast Llama 3.1/3.3 inference; when offline or without a key, the system still outputs formatted, actionable ISO 10816 / OSHA LOTO maintenance tickets. Tested across 9 unit tests.
+- **Impact on scope:** Completes Milestone M8 early with 138/138 passing unit tests.
+- **Documents updated:** `src/copilot.py`, `tests/test_copilot.py`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/TECH_STACK.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-010: Executive Light Industrial HTML Presentation Website
+- **Date:** 2026-11-20
+- **Question / change:** How should the team present the project opening in the video recording and to executive judges who want a high-level architectural walkthrough before seeing raw telemetry?
+- **Options considered:**
+  - (A) Start video recording directly in the Streamlit analysis studio.
+  - (B) Use standard PowerPoint slides.
+  - (C) Build a dedicated, interactive Executive HTML Presentation Website (`presentation/index.html`) hosted on GitHub Pages.
+- **Chosen option:** Option C (`presentation/index.html` with vector SVG mechanical machinery blueprints, interactive spectrogram comparisons, and keynote walkthrough).
+- **Reason / evidence:** Elevated the presentation quality to professional industrial standards; provides visual mechanical context (motor, bearings, impeller, microphone probe placement) before demonstrating acoustic waveform anomalies.
+- **Impact on scope:** Added presentation asset under `presentation/`.
+- **Documents updated:** `docs/PROJECT_MASTER_GUIDE.md`, `docs/PRELIMINARY_VIDEO_SCRIPT.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-011: Multi-View Industrial Operations Dashboard Redesign
+- **Date:** 2026-11-20
+- **Question / change:** How should the Streamlit interface be structured to satisfy both deep acoustic engineering analysis and plant-wide management overview?
+- **Options considered:**
+  - (A) Single crowded dashboard with vertical scrolling.
+  - (B) Multi-page Streamlit app with multiple `.py` files (risks state synchronization issues).
+  - (C) Multi-view unified dashboard with clean dark navy sidebar radio navigation across 5 specialized views:
+    1. `Acoustic Diagnostic Studio` (3-stage diagnostic workflow: Ingestion, Quality Gate, Inference).
+    2. `Plant Fleet Overview` (Multi-line machinery health status board).
+    3. `Model Benchmarks & Validation` (Empirical ROC/PR curves and confusion matrix).
+    4. `Inspection History & Audit` (SQLite run logs with 1-click CSV export).
+    5. `System Architecture & ISO Standards` (ISO 13374-1 diagram, tech stack, dataset citation).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Created a cohesive, executive-grade industrial software experience that impressed preliminary judges and cleanly separates diagnostic depth from fleet management.
+- **Impact on scope:** Redesigned `app/dashboard.py` (1,134 LOC).
+- **Documents updated:** `app/dashboard.py`, `docs/PROJECT_MASTER_GUIDE.md`, `docs/UI_UX_GUIDELINES.md`.
+- **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-012: Preliminary Submission Completion & Phase 2 Finals Roadmap
+- **Date:** 2026-11-20
+- **Question / change:** What is the current milestone status following the successful completion of the CloudCamp preliminary submission, and how should Phase 2 (Finals) be structured?
+- **Chosen option:** Officially mark Milestones M0 through M8 as **COMPLETE**. Transition engineering focus to Phase 2:
+  - M9: Custom Model Context Protocol (MCP) Server (`src/mcp_server.py`).
+  - M10: Production FastAPI REST & WebSocket Backend (`src/api.py`).
+  - M11: Lovable Modern React Enterprise Frontend (`frontend/`).
+  - M12: Multi-Machine Industrial Fleet Extension (Pumps, Valves, Slide Rails).
+  - M13: Edge Runtime Packaging (ONNX CPU Export & Edge Gateway Guide).
+  - M14: Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite.
+- **Reason / evidence:** Preliminary submission was submitted on time with 138/138 passing tests, live URL, and YouTube video. Phase 2 roadmap targets maximum rubric points for the live Finals competition.
+- **Impact on scope:** Activates Phase 2 engineering sprint.
+- **Documents updated:** `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`, `docs/PROJECT_MASTER_GUIDE.md`.
+- **Approved by:** Tamzidul & Antigravity.

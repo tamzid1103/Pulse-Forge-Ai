@@ -11,19 +11,23 @@
 
 ## 2. Milestone overview
 
-| Milestone | Objective | Priority | Dependency |
-|---|---|---|---|
-| M0 | Environment and repository setup | Must | None |
-| M1 | Dataset audit and fan subset | Must | M0 |
-| M2 | Audio exploration and preprocessing | Must | M1 |
-| M3 | Baseline anomaly detector | Must | M2 |
-| M4 | Autoencoder training and threshold | Must | M2 |
-| M5 | Reliability and decision policy | Must | M3/M4 |
-| M6 | Streamlit end-to-end MVP | Must | M5 |
-| M7 | Evaluation and demo scenarios | Must | M4/M5/M6 |
-| M8 | Polish, docs, pitch, and final rehearsal | Must | M7 |
-| M9 | SQLite / FastAPI / additional explanations | Optional | M8 or stable M6 |
-| M10 | Extra machine types / DUE-DG / sensor capture | Future | Separate data and validation |
+| Milestone | Objective | Priority | Status | Dependency |
+|---|---|---|---|---|
+| M0 | Environment and repository setup | Must | ✅ Complete (Python 3.12, PyTorch CPU, Librosa) | None |
+| M1 | Dataset audit and fan subset | Must | ✅ Complete (MIMII id_00 6dB fan, 50 files) | M0 |
+| M2 | Audio exploration and preprocessing | Must | ✅ Complete (128-band log-Mel, FeatureScaler) | M1 |
+| M3 | Baseline anomaly detector | Must | ✅ Complete (Isolation Forest, 0.9167 AUROC) | M2 |
+| M4 | Autoencoder training and threshold | Must | ✅ Complete (Dense AE, 0.9375 AUROC, 1.0 Recall) | M2 |
+| M5 | Reliability and decision policy | Must | ✅ Complete (Quality + Familiarity + 4 States) | M3/M4 |
+| M6 | Service layer, SQLite audit & Streamlit MVP | Must | ✅ Complete (5 demo files, multi-view dashboard) | M5 |
+| M7 | Preliminary submission dossier & video script | Must | ✅ Complete (Submitted to CloudCamp portal) | M6 |
+| M8 | Factory Brain AI Copilot (Groq LPU + SOP RAG) | Must | ✅ Complete (138/138 tests passing, zero-crash fallback) | M6 |
+| M9 | PulseForge Custom Model Context Protocol (MCP) Server | Should | 📋 Phase 2 (Finals) | M6/M8 |
+| M10 | FastAPI REST & WebSocket Backend | Should | 📋 Phase 2 (Finals) | M6 |
+| M11 | Lovable React Industrial Enterprise Frontend | Should | 📋 Phase 2 (Finals) | M10 |
+| M12 | Multi-Machine Industrial Fleet Extension (Pumps, Valves) | Could | 📋 Phase 2 (Finals) | M4/M5 |
+| M13 | Edge Runtime Packaging (ONNX CPU Export & Gateway) | Could | 📋 Phase 2 (Finals) | M4/M8 |
+| M14 | Finals Pitch Deck, Stage Rehearsal & Live Resilience | Must | 📋 Phase 2 (Finals) | M9-M11 |
 
 ## 3. Milestone details
 
@@ -284,125 +288,178 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ---
 
-### PHASE 2: FINAL ROUND PRODUCTION & ADVANCED EXPANSION (NEXT 2 WEEKS)
+### PHASE 2: FINAL ROUND PRODUCTION & ADVANCED EXPANSION
 
-### M8 — Factory Brain Copilot (Contextual RAG & local Ollama integration)
+### M8 — Factory Brain Copilot (Groq LPU + SOP Knowledge Base + Deterministic Fallback)
 
-**Status:** Planned (Final Round)
+**Status:** ✅ Completed & Verified (9 tests in `tests/test_copilot.py`; 138/138 total passing tests)
 
-**Objective:** Add an agentic advisory layer using contextual RAG on industrial fan manuals and local Ollama execution (`llama3.2` / `deepseek-r1`) to auto-generate operator work orders and inspection tickets.
+**Objective:** Add an agentic advisory layer grounded in rotating machinery SOPs and ISO 10816 condition monitoring standards to auto-generate OSHA 1910.147 Lockout/Tagout maintenance work orders and answer technician queries at 500+ tok/s.
 
 **Files:**
-
 - `src/copilot.py`
 - `data/knowledge_base/fan_maintenance_sop.md`
 - `data/knowledge_base/iso_10816_acoustic_standards.md`
 - `tests/test_copilot.py`
 
+**Accomplished:**
+1. Built `IndustrialCopilot` engine with Groq LPU API execution supporting automated model fallback cascade (`llama-3.1-8b-instant` -> `llama3-8b-8192` -> `llama-3.3-70b-versatile`).
+2. Implemented deterministic, zero-crash offline SOP fallback that generates complete, structured maintenance tickets even without an API key or when offline.
+3. Added 1-Click Work Order Generator in Streamlit UI rendering structured JSON and formatted Markdown.
+4. Added interactive technician diagnostic chat Q&A assistant in the UI.
+
 ---
 
-### M9 — PulseForge custom Model Context Protocol (MCP) server
+### M9 — PulseForge Custom Model Context Protocol (MCP) Server
 
-**Status:** Planned (Final Round)
+**Status:** 📋 Phase 2 (Next Immediate Milestone)
 
-**Objective:** Build a custom MCP server (`src/mcp_server.py`) exposing PulseForge tools (`analyze_fan_audio`, `inspect_signal_quality`, `get_machine_health_status`) to AI assistants (Antigravity, Claude, Cursor) over Stdio and SSE transports.
+**Objective:** Expose PulseForge diagnostic and copilot capabilities as a standardized Model Context Protocol (MCP) server (`src/mcp_server.py`) over Stdio and SSE transports, allowing external AI coding and operations agents (Antigravity, Claude, Cursor) to directly query machine health and generate work orders.
 
 **Files:**
-
 - `src/mcp_server.py`
 - `tests/test_mcp_server.py`
+- `docs/MCP_SPECIFICATION.md`
+
+**Key Tasks:**
+1. Define MCP Tools:
+   - `analyze_fan_audio(audio_path: str)`: Executes 6-stage acoustic pipeline; returns 4-state decision and metrics.
+   - `inspect_signal_quality(audio_path: str)`: Tests RMS, clipping, and duration flags.
+   - `get_machine_telemetry(machine_id: str)`: Returns operational baselines and recent inspection history.
+   - `generate_maintenance_ticket(machine_id: str, decision_status: str)`: Generates OSHA-grounded work order.
+2. Define MCP Resources:
+   - `pulseforge://fleet/status`: Current health status of all monitored plant equipment.
+   - `pulseforge://standards/iso10816`: ISO vibration/acoustic severity reference tables.
+3. Support Stdio transport for local IDE agents and SSE transport for networked orchestrators.
+4. Author automated unit and protocol integration tests.
 
 ---
 
-### M10 — Lovable modern React industrial web dashboard
+### M10 — FastAPI Production REST & WebSocket Backend
 
-**Status:** Planned (Final Round)
+**Status:** 📋 Phase 2 (Planned)
 
-**Objective:** Export and polish the modern React + Vite + Tailwind CSS industrial dashboard from Lovable, integrating it with the FastAPI backend (`src/api.py`) for both localhost and web access.
+**Objective:** Decouple backend inference and telemetry persistence into a high-performance FastAPI service (`src/api.py`), providing headless REST endpoints for third-party plant SCADA/MES systems and real-time WebSocket audio streaming for modern frontends.
 
 **Files:**
-
 - `src/api.py`
-- `frontend/` (React/Vite app)
 - `tests/test_api.py`
+- `docs/API_DOCUMENTATION.md` (updates)
+
+**Key Tasks:**
+1. Implement REST endpoints:
+   - `GET /health` & `GET /api/v1/system/status`
+   - `POST /api/v1/analyze` (multipart audio upload with file validation)
+   - `GET /api/v1/runs` & `GET /api/v1/runs/{id}` (SQLite audit history)
+   - `POST /api/v1/copilot/work-order` & `POST /api/v1/copilot/chat`
+2. Implement WebSocket endpoint:
+   - `WS /ws/v1/audio-stream` for live microphone chunk ingestion and real-time spectrogram streaming.
+3. Integrate CORS, structured logging, Pydantic v2 schemas, and background task processing.
 
 ---
 
-### M11 — Production cloud deployment & public live hosting
+### M11 — Lovable React Industrial Enterprise Frontend
 
-**Status:** Planned (Final Round)
+**Status:** 📋 Phase 2 (Planned)
 
-**Objective:** Deploy the full-stack system online: FastAPI backend on Render/Railway, React frontend on Vercel/Netlify, and automated Cloudflare Tunneling (`scripts/run_tunnel.sh`).
+**Objective:** Build a high-performance modern React + Vite + Tailwind CSS industrial operations dashboard via Lovable MCP, offering enterprise-grade plant floor UX, multi-machine status boards, and animated spectrogram canvas visualization.
 
 **Files:**
+- `frontend/` (React/Vite project)
+- `frontend/src/components/AudioVisualizer.tsx`
+- `frontend/src/components/FleetHealthBoard.tsx`
+- `frontend/src/components/CopilotDrawer.tsx`
 
-- `deploy/Dockerfile`
-- `docker-compose.yml`
-- `scripts/run_tunnel.sh`
+**Key Tasks:**
+1. Generate enterprise SCADA UI layout using Lovable with dark/light industrial theme tokens.
+2. Connect React frontend to FastAPI endpoints (`M10`) with WebSocket audio streaming.
+3. Build interactive HTML5 Canvas audio spectrum & waveform analyzer.
+4. Deploy frontend to Vercel/Netlify with seamless proxying to backend API.
 
 ---
 
-### M12 — Multi-machine industrial fleet expansion
+### M12 — Multi-Machine Industrial Fleet Extension (Pumps, Valves, Slide Rails)
 
-**Status:** Planned (Final Round)
+**Status:** 📋 Phase 2 (Planned)
 
-**Objective:** Expand dataset and model registry beyond fans to include MIMII pumps, valves, and slide rails with multi-machine fleet monitoring.
+**Objective:** Extend acoustic diagnostic capabilities beyond centrifugal ventilation fans to include other core rotating and fluid machinery families from the MIMII benchmark (Centrifugal Pumps, Industrial Valves, and Linear Slide Rails).
 
 **Files:**
-
 - `src/models/registry.py`
-- `data/manifests/fleet_manifest.csv`
+- `data/manifests/pump_manifest.csv`
+- `data/manifests/valve_manifest.csv`
+- `scripts/train_multi_machine.py`
+
+**Key Tasks:**
+1. Download targeted MIMII subsets for Pump (id_00), Valve (id_00), and Slide Rail (id_00).
+2. Train machine-specific Autoencoders and latent familiarity estimators.
+3. Implement `ModelRegistry` dynamic loading pattern in `src/service.py` to route audio based on selected machine type.
+4. Update UI selectors to support multi-machine fleet switching.
 
 ---
 
-### M13 — Zero to Launch single master prompt & final pitch deck
+### M13 — Edge Runtime Packaging (ONNX CPU Export & Edge Gateway Guide)
 
-**Status:** Planned (Final Round)
+**Status:** 📋 Phase 2 (Planned)
 
-**Objective:** Author the canonical single master prompt covering all 8 competition modules and prepare the final presentation slide deck.
+**Objective:** Export PyTorch Autoencoder models to optimized ONNX format for sub-25ms inference on resource-constrained industrial edge gateways (Raspberry Pi 5 / NVIDIA Jetson Orin Nano).
 
 **Files:**
+- `scripts/export_onnx.py`
+- `src/models/onnx_runner.py`
+- `docs/EDGE_GATEWAY_DEPLOYMENT_GUIDE.md`
+- `deploy/Dockerfile.edge`
 
-- `docs/ZERO_TO_LAUNCH_MASTER_PROMPT.md`
-- `docs/PITCH_DECK.md`
+**Key Tasks:**
+1. Export PyTorch dense Autoencoder to ONNX with dynamic batching.
+2. Validate ONNX Runtime CPU inference matches PyTorch output within $\epsilon = 1e-5$.
+3. Benchmark edge CPU latency (target: < 30 ms per 10s audio segment).
+4. Provide standalone Docker edge container and systemd service recipe for 24/7 autonomous monitoring.
 
-## 4. Suggested 48-hour schedule
+---
 
-| Time | Focus | Exit condition |
-|---|---|---|
-| 0–2 h | Environment, repo, roles | All developers can run Python environment |
-| 2–6 h | MIMII fan subset audit | Small normal/anomaly sample manifest exists |
-| 6–10 h | Audio pipeline and plots | Audio decodes; features and plots work |
-| 10–16 h | Baseline + first Autoencoder | Score produced on held-out sample |
-| 16–21 h | Threshold and evaluation | First metrics and model artifact saved |
-| 21–26 h | Quality / unfamiliarity / decision | Normal, anomaly, review paths work in tests |
-| 26–34 h | Streamlit vertical slice | Upload → result works end to end |
-| 34–39 h | Integration / regression testing | Three demo cases pass |
-| 39–44 h | UI polish / pitch / evidence | Clear presentation and results |
-| 44–48 h | Rehearsal / backup / freeze | Demo can run offline from clean launch |
+### M14 — Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite
 
-If training or dataset access takes longer, reduce scope rather than sacrificing the complete vertical slice. At minimum, keep one real model path and be transparent about limitations.
+**Status:** 📋 Phase 2 (Planned)
 
-## 5. Suggested team roles (adapt to actual team)
+**Objective:** Prepare world-class presentation materials, keynote slides, and an airtight offline live-demo rehearsal package for the CloudCamp BD Finals judging stage.
+
+**Files:**
+- `docs/FINALS_PITCH_DECK.md`
+- `docs/FINALS_STAGE_SCRIPT.md`
+- `scripts/run_offline_demo.sh`
+
+**Key Tasks:**
+1. Author comprehensive 5-minute keynote presentation script and slide deck.
+2. Build 1-click offline resilience launcher (`scripts/run_offline_demo.sh`) that spins up the local Streamlit dashboard and mock API with zero external dependencies.
+3. Conduct timed rehearsals covering the problem, live audio demo, ISO standards compliance, and business ROI.
+
+## 4. Suggested team roles (adapt to actual team)
 
 | Role | Responsibility |
 |---|---|
-| Data / audio engineer | Dataset audit, manifest, preprocessing, feature pipeline |
-| ML engineer | Baseline, Autoencoder, thresholding, evaluation |
-| Reliability / QA engineer | Quality checks, familiarity flags, decision tests |
-| App engineer | Streamlit, result rendering, optional API |
-| Product / integration lead | Scope, merge/release, demo script, slides, quality gate |
+| Data / audio engineer | Dataset audit, manifest, preprocessing, feature pipeline, multi-machine expansion |
+| ML engineer | Baseline, Autoencoder, thresholding, ONNX optimization, evaluation |
+| Reliability / QA engineer | Quality checks, familiarity flags, decision tests, ISO standards grounding |
+| App / Fullstack engineer | Streamlit dashboard, FastAPI backend, Lovable React frontend, MCP server |
+| Product / integration lead | Scope, merge/release, video script, slides, live stage presentation |
 
-For a smaller team, combine roles. Ensure one person owns integration and the final runnable build.
-
-## 6. Implementation status template
-
-At the end of every milestone, update a small table in the repository:
+## 5. Implementation status summary
 
 | Milestone | Status | Evidence | Blocker / next action |
 |---|---|---|---|
-| M0 | Complete | 19 smoke tests passed; `.venv` with Python 3.12, PyTorch CPU, Librosa, Streamlit, Scikit-learn; config & skeleton created; requirements pinned in `requirements-lock.txt` | None. Proceed to M1 |
-| M1 | Complete | 8 dataset tests passed (27 tests total); 45 real MIMII fan recordings downloaded from Zenodo (30 normal, 15 abnormal); `fan_manifest.csv` built with leakage-aware splits | None. Ready for M2 |
-| M2 | Complete | 22 audio I/O & feature tests passed (49 tests total); deterministic log-Mel extraction (128 Mel bins, 1.0s window, 0.5s hop); FeatureScaler fitted on 21 normal train recordings (399 segments) and saved to `scaler_params.json`; normal and abnormal diagnostic plots generated in `results/plots/` | None. Ready for M3 (Baseline Anomaly Detector) |
-
-Never mark a milestone complete based on code generation alone; run the tests / workflow and record evidence.
+| M0 | ✅ Complete | 19 smoke tests passed; `.venv` with Python 3.12.3, PyTorch CPU, Librosa, Streamlit, Scikit-learn; config & skeleton created; requirements pinned in `requirements-lock.txt` | None. Proceed to M1 |
+| M1 | ✅ Complete | 8 dataset tests passed (27 tests total); 50 genuine MIMII fan recordings downloaded from Zenodo (35 normal, 15 abnormal); `fan_manifest.csv` built with leakage-aware splits | None. Ready for M2 |
+| M2 | ✅ Complete | 22 audio I/O & feature tests passed (49 tests total); deterministic log-Mel extraction (128 Mel bins, 1.0s window, 0.5s hop); FeatureScaler fitted on 21 normal train recordings (399 segments) and saved to `scaler_params.json`; normal and abnormal diagnostic plots generated in `results/plots/` | None. Ready for M3 |
+| M3 | ✅ Complete | 10 baseline tests passed (59 tests total); Isolation Forest fitted on 256-dim pooled Mel features; validation threshold derived at target FPR=0.10; test AUROC = 0.9167, PR-AUC = 0.9583, Recall = 0.8750 | None. Ready for M4 |
+| M4 | ✅ Complete | 12 autoencoder tests passed (71 tests total); PyTorch symmetric dense Autoencoder trained on normal fan sounds; test AUROC = 0.9375, Recall = 1.0000 (100% mechanical fault detection), F1 = 0.9333; weights saved to `model_artifacts/autoencoder_fan_id_00.pt` | None. Ready for M5 |
+| M5 | ✅ Complete | 41 quality, familiarity, and decision tests passed (112 tests total); 4-state deterministic decision policy (`normal`, `possible_anomaly`, `needs_review`, `invalid_input`); latent Mahalanobis familiarity engine with threshold = 9.25 | None. Ready for M6 |
+| M6 | ✅ Complete | 17 service, persistence, and UI tests passed (129 tests total); `src/service.py` pipeline, SQLite audit trail (`src/persistence.py`), 5 curated demo audio scenarios in `demo_audio/`, and multi-view Streamlit dashboard (`app/dashboard.py`) | None. Ready for M7 |
+| M7 | ✅ Complete | Authored `docs/PRELIMINARY_VIDEO_SCRIPT.md` (2:45 min walkthrough) and `docs/PRELIMINARY_SUBMISSION_DOSSIER.md`; recorded video demo; preliminary submission officially completed on CloudCamp portal | None. Ready for M8 |
+| M8 | ✅ Complete | 9 copilot tests passed (138 tests total); `src/copilot.py` with Groq LPU API (`llama-3.1-8b-instant`), automated fallback cascade, domain-grounded fan SOPs, and deterministic offline fallback; 1-click work order generation in UI | None. Ready for Phase 2 (Finals) |
+| M9 | 📋 Phase 2 | Model Context Protocol server specification drafted; ready for implementation | Begin M9 MCP server implementation |
+| M10 | 📋 Phase 2 | FastAPI REST & WebSocket backend | Depends on M6 service |
+| M11 | 📋 Phase 2 | Lovable React enterprise frontend | Depends on M10 API |
+| M12 | 📋 Phase 2 | Multi-machine fleet expansion (pumps, valves, slide rails) | Planned for Finals |
+| M13 | 📋 Phase 2 | ONNX CPU runtime export & Edge Gateway deployment | Planned for Finals |
+| M14 | 📋 Phase 2 | Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite | Final delivery for competition stage |

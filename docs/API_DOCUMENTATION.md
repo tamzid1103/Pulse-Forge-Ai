@@ -138,3 +138,40 @@ PulseForge AI exposes its core industrial intelligence via a custom Model Contex
 ### Resources Exposed:
 - `pulseforge://telemetry/latest`: Real-time machine health state summary.
 - `pulseforge://manifest/fan`: Catalog of available benchmark audio files and split details.
+
+---
+
+## 8. Factory Brain Copilot Service Interface (`src/copilot.py`)
+
+The `IndustrialCopilot` class provides programmatic maintenance advisory generation:
+
+### `generate_work_order(result: AnalysisResult, audio_meta: AudioMetadata | None = None) -> WorkOrderResponse`
+
+Generates an actionable OSHA 1910.147 and ISO 10816 compliant maintenance ticket.
+
+**Execution Flow:**
+1. Formats deterministic telemetry string from `AnalysisResult` (anomaly score, threshold, quality flags, Mahalanobis unfamiliarity).
+2. Attempts ultra-low latency Groq LPU inference (model cascade: `llama-3.1-8b-instant` -> `llama3-8b-8192` -> `llama-3.3-70b-versatile`).
+3. If Groq API key is missing or network is unreachable, automatically triggers `_generate_deterministic_fallback()`: parses local SOP files in `data/knowledge_base/` and returns complete work order without throwing an unhandled exception.
+
+**Return Structure:**
+```json
+{
+  "work_order_id": "WO-20261120-FAN00-781A",
+  "urgency": "HIGH",
+  "recommended_action": "Bearing lubrication breakdown or micro-spalling detected. Execute Lockout/Tagout (LOTO) per OSHA 1910.147, remove belt guard, and measure ISO 10816 vibration velocity.",
+  "safety_lockout_required": true,
+  "required_ppe": ["Hard hat", "Safety glasses", "Cut-resistant gloves", "Steel-toe boots"],
+  "estimated_downtime_minutes": 60,
+  "inspection_checklist": [
+    "Verify zero electrical energy state (LOTO step 1)",
+    "Inspect SKF 6308 pillow block bearings for thermal discoloration",
+    "Check drive belt tension and pulley alignment"
+  ],
+  "model_used": "llama-3.1-8b-instant"
+}
+```
+
+### `ask_question(question: str, result: AnalysisResult | None = None) -> str`
+
+Interactive technical assistant answering technician questions grounded in rotating equipment manuals and ISO condition monitoring standards.

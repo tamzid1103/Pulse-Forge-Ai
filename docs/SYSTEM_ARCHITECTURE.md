@@ -11,16 +11,15 @@ PulseForge AI uses a **modular layered architecture** balancing two critical req
 ```mermaid
 flowchart TD
     subgraph Clients["Presentation & Integration Layer"]
-        U1["Plant Maintenance Operator"] --> ST["Streamlit Dashboard (Local / app/dashboard.py)"]
-        U2["Hackathon Judge / Remote Operator"] --> LV["Lovable React UI (Web App)"]
-        CFT["Cloudflare Tunnel / ngrok"] --> ST
-        CFT --> LV
-        AGT["External AI Agents (Antigravity, Claude, Cursor)"] --> MCP["PulseForge MCP Server (src/mcp_server.py)"]
+        U1["Plant Maintenance Operator"] --> ST["Streamlit Industrial Dashboard (Live: pulse-forge-ai.streamlit.app)"]
+        U2["Executive / Judge"] --> PRS["Executive Presentation Showcase (presentation/index.html)"]
+        U3["Remote Operator"] --> LV["Lovable React UI (Web App - Phase 2)"]
+        AGT["External AI Agents (Antigravity, Claude, Cursor)"] --> MCP["PulseForge MCP Server (src/mcp_server.py - Phase 2)"]
     end
 
     subgraph ServiceLayer["Application & API Service Layer"]
         ST --> SVC["Core Application Service (src/service.py)"]
-        LV --> API["FastAPI REST Endpoints (src/api.py)"]
+        LV --> API["FastAPI REST & WebSocket (src/api.py - Phase 2)"]
         API --> SVC
         MCP --> SVC
         SVC --> DB[("SQLite Audit Store (src/persistence.py)")]
@@ -41,13 +40,13 @@ flowchart TD
         RES --> SVC
     end
 
-    subgraph CopilotLayer["Factory Brain Copilot Layer (M7)"]
-        DEC -- "Anomaly / Needs Review" --> COP["Factory Brain Copilot (src/copilot.py)"]
-        KB["Industrial Fan SOPs & ISO Standards (data/knowledge_base/)"] --> RAG["Semantic / Contextual RAG Store"]
-        RAG --> COP
-        OLL["Local Ollama Runtime (llama3.2 / deepseek-r1)"] --> COP
-        COP --> WO["Actionable Maintenance Ticket & Inspection Checklist"]
-        WO --> SVC
+    subgraph CopilotLayer["Factory Brain Copilot Layer (M8)"]
+        DEC -- "Anomaly / Needs Review / Normal" --> COP["Factory Brain Copilot (src/copilot.py)"]
+        KB["Industrial Fan SOPs & ISO 10816 Standards (data/knowledge_base/)"] --> COP
+        GRQ["Groq LPU Ultra-Fast Inference (Llama 3.1 8B / 3.3 70B @ 500+ tok/s)"] --> COP
+        DET["Deterministic Zero-Crash Offline SOP Fallback"] --> COP
+        COP --> WO["Actionable Maintenance Work Order & Technician Q&A"]
+        WO --> ST
     end
 ```
 
@@ -66,7 +65,9 @@ flowchart TD
 | Familiarity checker | Compare feature / embedding representation with training distribution | Features or embedding | Familiarity flag / distance |
 | Decision policy | Combine model score with quality and familiarity flags | Scores and flags | `normal`, `possible_anomaly`, `needs_review`, or `invalid_input` |
 | Explanation builder | Convert measurable signals into cautious text | Result fields | Evidence summary and recommendation |
-| Persistence (optional) | Store analysis metadata only | Result metadata | History record ID |
+| Persistence Store | Store analysis metadata, scores, and decisions in SQLite; support CSV export | Result metadata | Run ID and audit history |
+| Factory Brain Copilot | Generate OSHA LOTO work orders and answer technician queries via Groq LPU / SOP fallback | Telemetry + SOP docs | Work order JSON/Markdown & Q&A |
+| Presentation Showcase | Executive web showcase with vector machinery blueprint & spectrogram comparison | Browser request | High-level interactive keynote UX |
 
 ## 4. Application workflow
 

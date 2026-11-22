@@ -2,9 +2,9 @@
 
 **Project:** PulseForge AI  
 **Tagline:** Hear the Warning. Trust the Signal. Prevent the Downtime.  
-**Package version:** 1.0  
-**Prepared:** 2026-11-16  
-**Project state:** Proposed / not yet implemented
+**Package version:** 2.0 (Phase 2 Finals Sprint)  
+**Prepared:** 2026-11-20  
+**Project state:** ✅ Phase 1 MVP Complete & Live Deployed (`https://pulse-forge-ai.streamlit.app/`); Phase 2 (Finals) Active
 
 This file is the canonical source of truth for a fresh AI coding agent. It replaces the need to read the prior ChatGPT discussion. When a requirement is ambiguous, consult `docs/DECISIONS_AND_OPEN_QUESTIONS.md`; do not silently invent an answer.
 

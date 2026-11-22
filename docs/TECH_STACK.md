@@ -4,20 +4,23 @@
 
 | Layer | Technology | Why selected | Status |
 |---|---|---|---|
-| Language | Python 3.12 (with 3.11 compatibility) | High performance, modern typing, audio & ML ecosystem | Core Runtime |
+| Language | Python 3.12.3 (with 3.11 compatibility) | High performance, modern typing, audio & ML ecosystem | Core Runtime |
 | Audio processing | Librosa + SoundFile + SciPy | Decodes WAV, extracts log-Mel spectrograms, audio checks | Core Engine |
 | Numeric/data | NumPy + Pandas | Array operations, manifests, feature scaling, telemetry | Core Engine |
 | Primary ML | PyTorch (CPU-optimized) | Symmetric Dense Autoencoder with early stopping | Core Anomaly Model |
 | Baseline ML | Scikit-learn | Isolation Forest benchmark and classification metrics | Core Baseline |
-| Application API | FastAPI + Uvicorn | Reusable REST API for multi-client access | Core Backend (M6) |
-| Local UI | Streamlit + Plotly | Interactive local operator dashboard with audio visualizer | Primary Local UI (M6) |
-| Web UI | Lovable (React / Tailwind) | Modern full-stack industrial web dashboard for judges | Web UI (M6) |
-| Metadata Store | SQLite 3 | Embedded, zero-configuration audit trail for analysis runs | Audit History (M6) |
-| Live Tunneling | Cloudflare Tunnel (`cloudflared`) / ngrok | Exposes local server securely over HTTPS for live judging | Live Demo (M6) |
-| Protocol / Tools | Model Context Protocol (MCP) | Exposes PulseForge tools & resources to agent ecosystems | Custom MCP (M7) |
-| Agent & RAG | Python Contextual RAG + Ollama | Indexes fan SOPs; generates maintenance work orders | Factory Brain (M7) |
-| Testing | Pytest | 112 automated unit, integration, and regression tests | Quality Gate |
+| Cloud Hosting | Streamlit Community Cloud + Debian Linux | Live, public, 24/7 web access: `https://pulse-forge-ai.streamlit.app/` | Live Web Demo |
+| Presentation Site | HTML5 + SVG + Tailwind (GitHub Pages) | Executive machinery blueprint & keynote showcase: `https://tamzid1103.github.io/Pulse-Forge-Ai/presentation/` | Live Presentation |
+| Primary UI | Streamlit (Multi-View Industrial Suite) | 5 specialized views: Diagnostic Studio, Fleet, Benchmarks, Audit, Standards | Operational Dashboard |
+| Metadata Store | SQLite 3 | Embedded, zero-configuration audit trail with CSV export (`src/persistence.py`) | Audit History |
+| Factory Brain Copilot | Groq LPU (Llama 3.1/3.3) + Offline SOP Engine | 500+ tok/s OSHA work order generation with zero-crash fallback (`src/copilot.py`) | Operational Copilot |
+| Testing | Pytest | 138 automated unit, integration, and regression tests (100% pass rate) | Quality Gate |
 | Version control | Git + GitHub | Reproducible collaboration and release tracking | Version Control |
+| Protocol / Tools | Model Context Protocol (MCP) | Exposes PulseForge tools & resources to agent ecosystems (`src/mcp_server.py`) | Phase 2 (M9) |
+| Application API | FastAPI + Uvicorn + WebSockets | Headless REST & WebSocket audio streaming backend (`src/api.py`) | Phase 2 (M10) |
+| Web UI | Lovable (React / Vite / Tailwind) | Enterprise plant floor dashboard for multi-machine control | Phase 2 (M11) |
+| Multi-Machine | ModelRegistry + MIMII Extensions | Extends detection to Centrifugal Pumps, Valves, Slide Rails | Phase 2 (M12) |
+| Edge Runtime | ONNX Runtime CPU | Sub-25ms inference on Raspberry Pi 5 / NVIDIA Jetson Orin Nano | Phase 2 (M13) |
 
 Do not introduce React, PostgreSQL, Redis, Docker, cloud storage, Kubernetes, or a hosted AI API for the MVP unless the project owner approves a specific need.
 
