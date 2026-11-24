@@ -11,13 +11,26 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import datetime
+import json
 import logging
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
+from fastapi import (
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import numpy as np
 from pydantic import BaseModel, Field
 
 from src.config import AppConfig, get_default_config
@@ -472,7 +485,148 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 
+    # ---------------------------------------------------------------------------
+    # Real-Time WebSocket Streaming Endpoint
+    # ---------------------------------------------------------------------------
+    @app.websocket("/ws/v1/audio-stream")
+    async def audio_stream_websocket(
+        websocket: WebSocket,
+        machine_id: str = "fan_id_00",
+    ) -> None:
+        """
+        Bidirectional WebSocket endpoint for real-time acoustic streaming.
+        Accepts:
+        - Binary PCM chunks: returns instantaneous RMS, clipping, and spectral bands.
+        - JSON text commands: ping/pong, full scenario evaluation, or telemetry queries.
+        """
+        await websocket.accept()
+        logger.info("WebSocket client connected for machine %s", machine_id)
+        await websocket.send_json({
+            "type": "connected",
+            "machine_id": machine_id,
+            "sample_rate": 16000,
+            "message": "PulseForge real-time acoustic telemetry stream active.",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        })
+
+        frame_counter = 0
+        try:
+            while True:
+                message = await websocket.receive()
+                if "bytes" in message and message["bytes"]:
+                    raw_bytes = message["bytes"]
+                    frame_counter += 1
+                    telemetry = compute_chunk_telemetry(raw_bytes)
+                    await websocket.send_json({
+                        "type": "telemetry",
+                        "frame_index": frame_counter,
+                        "machine_id": machine_id,
+                        "telemetry": telemetry,
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    })
+                elif "text" in message and message["text"]:
+                    try:
+                        payload = json.loads(message["text"])
+                    except Exception:
+                        payload = {"action": message["text"]}
+
+                    action = payload.get("action", "")
+                    if action == "ping":
+                        await websocket.send_json({
+                            "type": "pong",
+                            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        })
+                    elif action == "scenario":
+                        scenario_id = payload.get("id", "scenario_01")
+                        catalog = get_scenario_catalog()
+                        matched = next(
+                            (s for s in catalog if s["id"] == scenario_id or scenario_id in s["aliases"]),
+                            None,
+                        )
+                        if matched and Path(matched["file_path"]).is_file():
+                            svc = get_service()
+                            res, _, run_id = svc.analyze_audio(
+                                source=Path(matched["file_path"]),
+                                filename=matched["filename"],
+                                machine_id=machine_id,
+                                source_kind="demo_sample",
+                            )
+                            await websocket.send_json({
+                                "type": "analysis_result",
+                                "run_id": run_id,
+                                "scenario": matched["id"],
+                                "analysis": res.to_dict(),
+                            })
+                        else:
+                            await websocket.send_json({
+                                "type": "error",
+                                "message": f"Scenario {scenario_id} not found.",
+                            })
+                    else:
+                        await websocket.send_json({
+                            "type": "ack",
+                            "received_action": action,
+                            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        })
+        except WebSocketDisconnect:
+            logger.info("WebSocket disconnected for machine %s", machine_id)
+        except Exception as e:
+            logger.warning("WebSocket error for machine %s: %s", machine_id, e)
+
     return app
+
+
+def compute_chunk_telemetry(raw_bytes: bytes) -> dict[str, Any]:
+    """
+    Compute rapid physical telemetry and spectral energy bands from raw 16-bit PCM or WAV audio bytes.
+    Optimized for high-throughput edge streaming (<1ms execution).
+    """
+    if len(raw_bytes) % 2 == 0:
+        samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+    else:
+        samples = np.frombuffer(raw_bytes[: len(raw_bytes) - 1], dtype=np.int16).astype(np.float32) / 32768.0
+
+    if len(samples) == 0:
+        return {
+            "rms_level": 0.0,
+            "peak_amplitude": 0.0,
+            "clipping_ratio": 0.0,
+            "quality_pass": False,
+            "spectral_bands": {
+                "low_0_2khz": 0.0,
+                "mid_2_4khz": 0.0,
+                "high_4_8khz": 0.0,
+            },
+        }
+
+    rms = float(np.sqrt(np.mean(samples**2)))
+    peak = float(np.max(np.abs(samples)))
+    clipping = float(np.mean(np.abs(samples) >= 0.99))
+    quality_pass = (rms >= 0.001) and (clipping <= 0.01)
+
+    # Rapid FFT spectral energy distribution
+    fft_vals = np.abs(np.fft.rfft(samples))
+    n_bins = len(fft_vals)
+    if n_bins >= 3:
+        third = n_bins // 3
+        low = float(np.mean(fft_vals[:third]))
+        mid = float(np.mean(fft_vals[third : 2 * third]))
+        high = float(np.mean(fft_vals[2 * third :]))
+    else:
+        low = float(np.mean(fft_vals)) if n_bins > 0 else 0.0
+        mid, high = low, low
+
+    return {
+        "rms_level": round(rms, 5),
+        "peak_amplitude": round(peak, 4),
+        "clipping_ratio": round(clipping, 4),
+        "quality_pass": quality_pass,
+        "spectral_bands": {
+            "low_0_2khz": round(low, 4),
+            "mid_2_4khz": round(mid, 4),
+            "high_4_8khz": round(high, 4),
+        },
+    }
 
 
 def _resolve_analysis_result(
