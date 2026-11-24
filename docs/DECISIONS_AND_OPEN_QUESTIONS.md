@@ -343,3 +343,16 @@ Approved by:
 - **Impact on scope:** Completes Milestone M10.
 - **Documents updated:** `requirements.txt`, `src/api.py`, `tests/test_api.py`, `docs/API_DOCUMENTATION.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
 - **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-015: Lovable React Industrial Enterprise Frontend Architecture (Milestone M11)
+- **Date:** 2026-11-24
+- **Question / change:** How should the enterprise-grade web application be architected to satisfy CloudCamp BD Finals judging requirements, dual-mode deployment (local Vite + Lovable cloud), and real-time audio streaming visualization?
+- **Options considered:**
+  - (A) Rely exclusively on the Streamlit dashboard (`app/dashboard.py`).
+  - (B) Generate an unintegrated static HTML/JS mock without TypeScript or WebSocket integration.
+  - (C) Full-stack TypeScript + React 18 + Vite + Tailwind CSS industrial operations dashboard in `frontend/` paired with a deployed Lovable cloud project (`projectId: 87ff379e-b3a5-47ed-ade8-f1345d92ab5d`). Features 4 specialized operational views (Diagnostic Studio with HTML5 canvas oscilloscope, Live WebSocket Streaming with 3-band FFT bars, Plant Fleet Health Board with ISO 10816 zones, and SQLite Audit Trail table with CSV export), plus a Factory Brain Copilot drawer for OSHA 1910.147 work orders.
+- **Chosen option:** Option C.
+- **Reason / evidence:** Provides an enterprise SCADA-grade user experience with sub-millisecond audio rendering, clean Vite proxy configuration for zero-CORS backend communication, resilient offline demonstration fallbacks, and a live Lovable cloud deployment URL (`https://id-preview--87ff379e-b3a5-47ed-ade8-f1345d92ab5d.lovable.app`). Production build succeeds cleanly (`npm run build`).
+- **Impact on scope:** Completes Milestone M11.
+- **Documents updated:** `frontend/`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
+- **Approved by:** Tamzidul & Antigravity.
