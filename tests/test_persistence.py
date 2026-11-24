@@ -141,3 +141,12 @@ class TestPersistence:
 
         memory_store.clear_history()
         assert len(memory_store.get_recent_runs()) == 0
+
+    def test_file_db_concurrency_pragmas(self, tmp_path) -> None:
+        """Verify WAL mode and busy timeout are configured on file-backed databases."""
+        file_db = tmp_path / "test_concurrency.db"
+        store = AnalysisStore(db_path=file_db)
+        with store._get_connection() as conn:
+            mode = conn.execute("PRAGMA journal_mode;").fetchone()[0]
+            assert mode.lower() == "wal"
+

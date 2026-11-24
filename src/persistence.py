@@ -76,13 +76,17 @@ class AnalysisStore:
     def _get_connection(self) -> sqlite3.Connection:
         if self._mem_conn is not None:
             return self._mem_conn
-        conn = sqlite3.connect(str(self.db_path))
+        conn = sqlite3.connect(str(self.db_path), timeout=30.0)
         conn.row_factory = sqlite3.Row
         return conn
 
     def _init_db(self) -> None:
-        """Initialize database tables and indexes."""
+        """Initialize database tables, concurrency pragmas, and indexes."""
         with self._get_connection() as conn:
+            if str(self.db_path) != ":memory:":
+                conn.execute("PRAGMA journal_mode=WAL;")
+                conn.execute("PRAGMA synchronous=NORMAL;")
+                conn.execute("PRAGMA busy_timeout=30000;")
             conn.executescript(CREATE_TABLE_SQL)
             conn.commit()
 
