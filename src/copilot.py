@@ -379,11 +379,10 @@ RULES FOR YOUR RESPONSES:
 
         except Exception as e:
             logger.warning("Groq chat failed (%s). Falling back to rule-based response.", e)
+            sop_reply = self._deterministic_chat_response(messages, result)
             return (
                 f"**[Offline SOP Mode]** Groq API connection could not be established ({e}).\n\n"
-                f"**Standard Recommendation:** For asset `{machine_id}`, "
-                f"the current assessment status is **{result.status.value.upper() if result else 'UNKNOWN'}**. "
-                f"Please follow standard ISO 10816 inspection protocols."
+                f"{sop_reply}"
             )
 
     def _deterministic_work_order(

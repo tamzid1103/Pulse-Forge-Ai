@@ -138,7 +138,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         service = get_service()
         # Pre-warm service models
-        is_ready = service.is_ready()
+        is_ready = service.is_model_ready
         logger.info("PulseForge Service initialized. Model ready: %s", is_ready)
     except Exception as e:
         logger.error("Failed to initialize PulseForge service at startup: %s", e)
@@ -256,7 +256,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         Lightweight health and operational readiness check conforming to docs/API_DOCUMENTATION.md.
         """
         svc = get_service()
-        model_ready = svc.is_ready()
+        model_ready = svc.is_model_ready
         return {
             "status": "ok" if model_ready else "degraded",
             "model_loaded": model_ready,
@@ -276,12 +276,13 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "machine_type": "fan",
             "model_type": "autoencoder",
             "sample_rate": svc.config.audio.sample_rate,
-            "feature_dims": svc.config.features.n_mels * svc.config.features.frames_per_sample,
+            "feature_dims": svc.config.model.input_dim,
             "thresholds": {
                 "autoencoder_mse": 0.0032,
                 "familiarity_mahalanobis": 9.2549,
             },
-            "fleet_summary": svc.get_fleet_status(),
+            "fleet_summary": svc.get_summary_stats(),
+            "model_status": svc.get_model_status(),
             "supported_formats": list(svc.config.audio.supported_formats),
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
@@ -314,6 +315,16 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         contents = await file.read()
         filename = file.filename or "uploaded.wav"
 
+        if len(contents) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error_code": "invalid_audio",
+                    "message": "Uploaded audio file is empty (0 bytes).",
+                    "detail": "Empty or truncated audio cannot be analyzed.",
+                },
+            )
+
         result, signal, run_id = svc.analyze_audio(
             source=contents,
             filename=filename,
@@ -323,6 +334,36 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             record_to_db=record_to_db,
             operator_note=operator_note,
         )
+
+        if result.status == DecisionStatus.INVALID_INPUT:
+            exp_lower = result.explanation.lower()
+            if "unsupported" in exp_lower or not filename.lower().endswith(".wav"):
+                raise HTTPException(
+                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    detail={
+                        "error_code": "unsupported_media_type",
+                        "message": result.explanation,
+                        "detail": "Only standard 16-bit PCM WAV audio is supported.",
+                    },
+                )
+            elif "too short" in exp_lower or "too long" in exp_lower or "duration" in exp_lower:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "error_code": "audio_not_suitable",
+                        "message": result.explanation,
+                        "detail": "Audio recording fails minimum duration or suitability requirements.",
+                    },
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error_code": "invalid_audio",
+                        "message": result.explanation,
+                        "detail": "Audio container header or sample stream is corrupted and cannot be decoded.",
+                    },
+                )
 
         response: dict[str, Any] = {
             "run_id": run_id,
