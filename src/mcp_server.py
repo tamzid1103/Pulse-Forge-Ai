@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
+import tempfile
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
@@ -29,6 +31,51 @@ from src.service import PulseForgeService
 logger = logging.getLogger("pulseforge.mcp")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _resolve_safe_audio_path(audio_path: str) -> tuple[Path | None, str | None, str]:
+    """
+    Safely resolve and validate that the target audio path resides within authorized
+    workspace or system temporary boundaries to prevent directory traversal (CWE-22).
+
+    Returns:
+        (resolved_path, error_message, error_code)
+    """
+    try:
+        raw_path = Path(audio_path)
+        if not raw_path.is_absolute():
+            resolved = (PROJECT_ROOT / raw_path).resolve()
+        else:
+            resolved = raw_path.resolve()
+    except Exception as exc:
+        return None, f"Invalid audio path expression: {exc}", "invalid_path"
+
+    # Check existence
+    if not resolved.exists():
+        return None, f"Target audio recording not found at: {resolved}", "file_not_found"
+
+    # Verify path containment within authorized roots
+    allowed_roots = [
+        PROJECT_ROOT.resolve(),
+        Path(tempfile.gettempdir()).resolve(),
+        Path("/tmp").resolve(),
+    ]
+    custom_dir = os.environ.get("PULSEFORGE_DATA_DIR")
+    if custom_dir:
+        allowed_roots.append(Path(custom_dir).resolve())
+
+    is_allowed = any(
+        resolved == root or root in resolved.parents
+        for root in allowed_roots
+    )
+
+    if not is_allowed:
+        return None, f"Access denied: Audio path '{audio_path}' is outside authorized directories.", "access_denied"
+
+    if not resolved.is_file():
+        return None, f"Target audio path is not a regular file: {resolved}", "invalid_input"
+
+    return resolved, None, ""
 
 # Shared singleton cache
 _service_instance: PulseForgeService | None = None
@@ -94,14 +141,11 @@ def create_server() -> MCPServer:
             Dictionary containing 4-state decision status, anomaly score, threshold,
             quality assessment, familiarity report, explanation, and SQLite run ID.
         """
-        path = Path(audio_path)
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-
-        if not path.is_file():
+        path, err, err_code = _resolve_safe_audio_path(audio_path)
+        if path is None:
             return {
-                "error": "file_not_found",
-                "message": f"Target audio recording not found at: {path}",
+                "error": err_code,
+                "message": err,
                 "status": "invalid_input",
             }
 
@@ -175,14 +219,11 @@ def create_server() -> MCPServer:
             Hardware quality report with RMS amplitude, clipping percentage, duration,
             and suitability recommendation.
         """
-        path = Path(audio_path)
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-
-        if not path.is_file():
+        path, err, err_code = _resolve_safe_audio_path(audio_path)
+        if path is None:
             return {
-                "error": "file_not_found",
-                "message": f"Audio file not found at: {path}",
+                "error": err_code,
+                "message": err,
                 "suitable_for_ml": False,
             }
 

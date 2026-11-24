@@ -142,6 +142,30 @@ class TestMCPToolsExecution:
         assert data["suitable_for_ml"] is False
 
     @pytest.mark.anyio
+    async def test_mcp_tools_reject_path_traversal(self, mcp_server):
+        """Verify CWE-22 directory traversal is strictly blocked."""
+        # /etc/passwd exists on Linux systems but is outside authorized roots
+        target_outside = "/etc/passwd"
+        if not Path(target_outside).exists():
+            target_outside = "/etc/hosts"
+
+        res_analyze = await mcp_server.call_tool(
+            "analyze_fan_audio",
+            {"audio_path": target_outside, "machine_id": "fan_00_a"},
+        )
+        data_analyze = _get_tool_data(res_analyze)
+        assert data_analyze["error"] == "access_denied"
+        assert data_analyze["status"] == "invalid_input"
+
+        res_inspect = await mcp_server.call_tool(
+            "inspect_signal_quality",
+            {"audio_path": target_outside},
+        )
+        data_inspect = _get_tool_data(res_inspect)
+        assert data_inspect["error"] == "access_denied"
+        assert data_inspect["suitable_for_ml"] is False
+
+    @pytest.mark.anyio
     async def test_analyze_fan_audio_normal(self, mcp_server):
         demo_wav = PROJECT_ROOT / "demo_audio" / "01_normal_fan.wav"
         if not demo_wav.is_file():
