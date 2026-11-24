@@ -10,10 +10,12 @@ Provides:
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import datetime
 import logging
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -30,6 +32,8 @@ from src.exceptions import (
 from src.service import PulseForgeService
 
 logger = logging.getLogger("pulseforge.api")
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Global state instances accessible across routes
 service: PulseForgeService | None = None
@@ -172,7 +176,193 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             },
         )
 
+    # ---------------------------------------------------------------------------
+    # Health & System Status Endpoints
+    # ---------------------------------------------------------------------------
+    @app.get("/health", tags=["System"])
+    async def health_check() -> dict[str, Any]:
+        """
+        Lightweight health and operational readiness check conforming to docs/API_DOCUMENTATION.md.
+        """
+        svc = get_service()
+        model_ready = svc.is_ready()
+        return {
+            "status": "ok" if model_ready else "degraded",
+            "model_loaded": model_ready,
+            "model_version": "fan-ae-v1",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+
+    @app.get("/api/v1/system/status", tags=["System"])
+    async def system_status() -> dict[str, Any]:
+        """
+        Detailed equipment and algorithm telemetry: sample rate, feature dimensions,
+        decision thresholds, and fleet operational metrics.
+        """
+        svc = get_service()
+        return {
+            "application": "PulseForge AI",
+            "machine_type": "fan",
+            "model_type": "autoencoder",
+            "sample_rate": svc.config.audio.sample_rate,
+            "feature_dims": svc.config.features.n_mels * svc.config.features.frames_per_sample,
+            "thresholds": {
+                "autoencoder_mse": 0.0032,
+                "familiarity_mahalanobis": 9.2549,
+            },
+            "fleet_summary": svc.get_fleet_status(),
+            "supported_formats": list(svc.config.audio.supported_formats),
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+
+    @app.get("/api/v1/scenarios", tags=["Analysis"])
+    async def list_scenarios() -> list[dict[str, Any]]:
+        """
+        Returns the catalog of bundled curated demonstration scenarios.
+        """
+        return get_scenario_catalog()
+
+    # ---------------------------------------------------------------------------
+    # Acoustic Analysis Endpoints
+    # ---------------------------------------------------------------------------
+    @app.post("/api/v1/analyze", tags=["Analysis"])
+    async def analyze_audio_upload(
+        file: UploadFile = File(..., description="Multipart WAV audio recording"),
+        machine_id: str = Form("fan_id_00", description="Equipment asset ID"),
+        source_kind: str = Form("uploaded", description="Source classification"),
+        record_to_db: bool = Form(True, description="Persist audit record in SQLite"),
+        operator_note: str = Form("", description="Optional technician note"),
+    ) -> dict[str, Any]:
+        """
+        Main acoustic anomaly detection pipeline endpoint.
+        Performs technical audio decoding, physical signal quality assessment,
+        Log-Mel feature extraction, PyTorch Autoencoder scoring, latent Mahalanobis
+        familiarity gating, and 4-state deterministic decision policy.
+        """
+        svc = get_service()
+        contents = await file.read()
+        filename = file.filename or "uploaded.wav"
+
+        result, signal, run_id = svc.analyze_audio(
+            source=contents,
+            filename=filename,
+            machine_id=machine_id,
+            machine_type="fan",
+            source_kind=source_kind,
+            record_to_db=record_to_db,
+            operator_note=operator_note,
+        )
+
+        response: dict[str, Any] = {
+            "run_id": run_id,
+            "machine_id": machine_id,
+            "filename": filename,
+            "analysis": result.to_dict(),
+        }
+        return response
+
+    @app.post("/api/v1/analyze/scenario/{scenario_id}", tags=["Analysis"])
+    async def analyze_scenario(
+        scenario_id: str,
+        machine_id: str = Form("fan_id_00"),
+        record_to_db: bool = Form(True),
+    ) -> dict[str, Any]:
+        """
+        Executes a 1-click evaluation of a bundled demonstration scenario.
+        Accepts scenario identifiers: scenario_01 (normal), scenario_02 (anomaly),
+        scenario_03 (silent), scenario_04 (clipped), scenario_05 (domain_shift).
+        """
+        catalog = get_scenario_catalog()
+        matched = None
+        s_id_clean = scenario_id.lower().strip()
+        for item in catalog:
+            if s_id_clean == item["id"] or s_id_clean in item["aliases"]:
+                matched = item
+                break
+
+        if not matched:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario '{scenario_id}' not found. Available: {[s['id'] for s in catalog]}",
+            )
+
+        file_path = Path(matched["file_path"])
+        if not file_path.is_file():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Scenario audio file missing at {file_path}",
+            )
+
+        svc = get_service()
+        result, signal, run_id = svc.analyze_audio(
+            source=file_path,
+            filename=file_path.name,
+            machine_id=machine_id,
+            machine_type="fan",
+            source_kind="demo_sample",
+            record_to_db=record_to_db,
+            operator_note=f"Demo Scenario: {matched['label']}",
+        )
+
+        return {
+            "run_id": run_id,
+            "scenario": matched,
+            "analysis": result.to_dict(),
+        }
+
     return app
+
+
+def get_scenario_catalog() -> list[dict[str, Any]]:
+    """Helper returning metadata for bundled demonstration scenarios."""
+    demo_dir = PROJECT_ROOT / "demo_audio"
+    return [
+        {
+            "id": "scenario_01",
+            "aliases": ["01", "normal", "scenario_01", "01_normal_fan"],
+            "label": "01 Normal Fan Baseline",
+            "filename": "01_normal_fan.wav",
+            "file_path": str((demo_dir / "01_normal_fan.wav").resolve()),
+            "expected_status": "normal",
+            "description": "Authentic MIMII Fan ID 00 healthy baseline recording in 6 dB industrial noise.",
+        },
+        {
+            "id": "scenario_02",
+            "aliases": ["02", "anomaly", "bearing", "scenario_02", "02_bearing_anomaly"],
+            "label": "02 Bearing Raceway Anomaly",
+            "filename": "02_bearing_anomaly.wav",
+            "file_path": str((demo_dir / "02_bearing_anomaly.wav").resolve()),
+            "expected_status": "possible_anomaly",
+            "description": "Authentic MIMII Fan ID 00 bearing degradation exhibiting high-frequency impact bursts.",
+        },
+        {
+            "id": "scenario_03",
+            "aliases": ["03", "silent", "disconnection", "scenario_03", "03_silent_sensor_failure"],
+            "label": "03 Silent Sensor Failure",
+            "filename": "03_silent_sensor_failure.wav",
+            "file_path": str((demo_dir / "03_silent_sensor_failure.wav").resolve()),
+            "expected_status": "needs_review",
+            "description": "Sensor line disconnection / zero-voltage ADC drop. Fails RMS energy quality check.",
+        },
+        {
+            "id": "scenario_04",
+            "aliases": ["04", "clipped", "saturation", "scenario_04", "04_clipped_sensor_saturation"],
+            "label": "04 Clipped Sensor Saturation",
+            "filename": "04_clipped_sensor_saturation.wav",
+            "file_path": str((demo_dir / "04_clipped_sensor_saturation.wav").resolve()),
+            "expected_status": "needs_review",
+            "description": "Preamplifier gain overflow causing harsh digital square-wave clipping (>1.0% clipping ratio).",
+        },
+        {
+            "id": "scenario_05",
+            "aliases": ["05", "domain_shift", "unfamiliar", "scenario_05", "05_unfamiliar_operating_noise"],
+            "label": "05 Unfamiliar Operating Noise",
+            "filename": "05_unfamiliar_operating_noise.wav",
+            "file_path": str((demo_dir / "05_unfamiliar_operating_noise.wav").resolve()),
+            "expected_status": "needs_review",
+            "description": "Acoustic background noise shift (Mahalanobis distance > 9.2549). Flags domain shift.",
+        },
+    ]
 
 
 # Default app instance for uvicorn
