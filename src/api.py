@@ -15,12 +15,14 @@ import logging
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from src.config import AppConfig, get_default_config
 from src.copilot import IndustrialCopilot
+from src.decision import DecisionStatus
 from src.exceptions import (
     AudioValidationError,
     CorruptAudioError,
@@ -29,11 +31,67 @@ from src.exceptions import (
     ModelNotFoundError,
     PulseForgeError,
 )
+from src.schemas import (
+    AnalysisResult,
+    FamiliarityReport,
+    ModelPrediction,
+    QualityReport,
+)
 from src.service import PulseForgeService
 
 logger = logging.getLogger("pulseforge.api")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+# ---------------------------------------------------------------------------
+# Pydantic Schemas for Requests
+# ---------------------------------------------------------------------------
+class WorkOrderRequest(BaseModel):
+    run_id: str | None = Field(
+        default=None,
+        description="Optional SQLite analysis run ID to ground the work order in empirical telemetry.",
+    )
+    decision_status: str = Field(
+        default="possible_anomaly",
+        description="Operational decision state if run_id is omitted (normal, possible_anomaly, needs_review).",
+    )
+    machine_id: str = Field(
+        default="fan_id_00",
+        description="Target machine equipment identifier (e.g. 'fan_id_00').",
+    )
+    operator_note: str = Field(
+        default="",
+        description="Field technician observations or dispatch notes.",
+    )
+    groq_api_key: str | None = Field(
+        default=None,
+        description="Optional Groq API key override for live LPU reasoning.",
+    )
+
+
+class ChatMessageItem(BaseModel):
+    role: str = Field(..., description="Message author role: 'user' or 'assistant'.")
+    content: str = Field(..., description="Message text content.")
+
+
+class CopilotChatRequest(BaseModel):
+    messages: list[ChatMessageItem] = Field(
+        ...,
+        description="Sequential list of conversation messages.",
+    )
+    run_id: str | None = Field(
+        default=None,
+        description="Optional analysis run ID to ground copilot responses in telemetry.",
+    )
+    machine_id: str = Field(
+        default="fan_id_00",
+        description="Target machine equipment identifier.",
+    )
+    groq_api_key: str | None = Field(
+        default=None,
+        description="Optional Groq API key override.",
+    )
 
 # Global state instances accessible across routes
 service: PulseForgeService | None = None
@@ -310,7 +368,216 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "analysis": result.to_dict(),
         }
 
+    # ---------------------------------------------------------------------------
+    # Audit Trail & Persistence Endpoints
+    # ---------------------------------------------------------------------------
+    @app.get("/api/v1/runs", tags=["Audit & Persistence"])
+    async def get_inspection_runs(
+        machine_id: str | None = Query(default=None, description="Filter by machine asset ID"),
+        limit: int = Query(default=50, ge=1, le=500, description="Max records to retrieve"),
+    ) -> dict[str, Any]:
+        """
+        Retrieves historical acoustic inspection records and aggregated fleet statistics from SQLite.
+        """
+        svc = get_service()
+        runs = svc.get_history(limit=limit, machine_id=machine_id)
+        summary = svc.get_summary_stats()
+        return {
+            "total_returned": len(runs),
+            "summary": summary,
+            "runs": runs,
+        }
+
+    @app.get("/api/v1/runs/{run_id}", tags=["Audit & Persistence"])
+    async def get_inspection_run(run_id: str) -> dict[str, Any]:
+        """
+        Retrieves a single comprehensive inspection record by UUID primary key.
+        """
+        svc = get_service()
+        run = svc.store.get_run_by_id(run_id)
+        if not run:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Inspection record '{run_id}' not found in SQLite store.",
+            )
+        return run
+
+    @app.delete("/api/v1/runs", tags=["Audit & Persistence"])
+    async def clear_inspection_runs() -> dict[str, Any]:
+        """
+        Purges historical SQLite inspection records for demonstration resets.
+        """
+        svc = get_service()
+        svc.store.clear_history()
+        return {
+            "status": "cleared",
+            "message": "SQLite audit inspection log purged successfully.",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+
+    # ---------------------------------------------------------------------------
+    # Factory Brain Copilot Endpoints
+    # ---------------------------------------------------------------------------
+    @app.post("/api/v1/copilot/work-order", tags=["Factory Brain Copilot"])
+    async def generate_maintenance_work_order(req: WorkOrderRequest) -> dict[str, Any]:
+        """
+        Generates a structured, ISO 10816-grounded maintenance work order.
+        Integrates deterministic acoustic telemetry with OEM maintenance SOPs.
+        Uses Groq LPU inference with automated fallback and zero-crash offline SOP mode.
+        """
+        svc = get_service()
+        cop = get_copilot()
+        result = _resolve_analysis_result(
+            svc=svc,
+            run_id=req.run_id,
+            decision_status=req.decision_status,
+            machine_id=req.machine_id,
+            operator_note=req.operator_note,
+        )
+        wo = cop.generate_work_order(
+            result=result,
+            machine_id=req.machine_id,
+            override_key=req.groq_api_key,
+        )
+        if req.operator_note:
+            wo["operator_note"] = req.operator_note
+        return wo
+
+    @app.post("/api/v1/copilot/chat", tags=["Factory Brain Copilot"])
+    async def copilot_chat(req: CopilotChatRequest) -> dict[str, Any]:
+        """
+        Interactive plant maintenance assistant providing technician diagnostic Q&A.
+        Answers vibration severity queries, ISO threshold interpretations, and safety protocols.
+        """
+        svc = get_service()
+        cop = get_copilot()
+        result = None
+        if req.run_id:
+            result = _resolve_analysis_result(
+                svc=svc,
+                run_id=req.run_id,
+                decision_status="normal",
+                machine_id=req.machine_id,
+            )
+        messages_dicts = [{"role": m.role, "content": m.content} for m in req.messages]
+        reply = cop.chat_response(
+            messages=messages_dicts,
+            result=result,
+            machine_id=req.machine_id,
+            override_key=req.groq_api_key,
+        )
+        return {
+            "machine_id": req.machine_id,
+            "reply": reply,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+
     return app
+
+
+def _resolve_analysis_result(
+    svc: PulseForgeService,
+    run_id: str | None,
+    decision_status: str,
+    machine_id: str,
+    operator_note: str = "",
+) -> AnalysisResult:
+    """
+    Resolve an AnalysisResult either from an existing SQLite run or by synthesizing
+    a representative result matching the requested status.
+    """
+    if run_id:
+        record = svc.store.get_run_by_id(run_id)
+        if record:
+            status_enum = DecisionStatus.NORMAL
+            for s in DecisionStatus:
+                if s.value.lower() == record.get("decision_status", "").lower():
+                    status_enum = s
+                    break
+
+            is_anom = record.get("anomaly_flag", 0) == 1
+            score = float(record.get("anomaly_score", 0.0) or 0.0)
+            thresh = float(record.get("threshold", 0.0032) or 0.0032)
+            rms = float(record.get("rms_level", 0.035) or 0.035)
+            clip = float(record.get("clipping_ratio", 0.0) or 0.0)
+            duration = float(record.get("duration_seconds", 10.0) or 10.0)
+            fam_score = (
+                float(record["uncertainty_score"])
+                if record.get("uncertainty_score") is not None
+                else 4.2
+            )
+            fam_thresh = (
+                float(record["uncertainty_threshold"])
+                if record.get("uncertainty_threshold") is not None
+                else 9.25
+            )
+            is_fam = record.get("uncertainty_flag", 0) == 0
+
+            return AnalysisResult(
+                status=status_enum,
+                status_label=status_enum.value.replace("_", " ").title(),
+                quality=QualityReport(
+                    passed=record.get("quality_pass", 1) == 1,
+                    rms_level=rms,
+                    is_silent=(rms < 0.001),
+                    clipping_ratio=clip,
+                    is_clipped=(clip > 0.01),
+                    duration_seconds=duration,
+                    is_duration_valid=True,
+                    warnings=record.get("quality_reasons", []),
+                ),
+                model_prediction=ModelPrediction(
+                    model_type=record.get("model_version", "autoencoder"),
+                    anomaly_score=score,
+                    threshold=thresh,
+                    is_anomaly=is_anom,
+                ),
+                familiarity=FamiliarityReport(
+                    score=fam_score,
+                    threshold=fam_thresh,
+                    is_familiar=is_fam,
+                ),
+                explanation=record.get("evidence", f"Empirical run record {run_id}"),
+                recommended_action=record.get("recommendation", "Execute standard plant SOP."),
+                machine_id=record.get("machine_id", machine_id),
+            )
+
+    # Synthesize typed result
+    status_enum = DecisionStatus.NORMAL
+    for s in DecisionStatus:
+        if s.value.lower() == decision_status.lower():
+            status_enum = s
+            break
+
+    is_anomaly = status_enum == DecisionStatus.POSSIBLE_ANOMALY
+    is_review = status_enum == DecisionStatus.NEEDS_REVIEW
+    return AnalysisResult(
+        status=status_enum,
+        status_label=status_enum.value.replace("_", " ").title(),
+        quality=QualityReport(
+            passed=(not is_review and status_enum != DecisionStatus.INVALID_INPUT),
+            rms_level=0.0002 if is_review else 0.035,
+            is_silent=is_review,
+            clipping_ratio=0.0,
+            is_clipped=False,
+            duration_seconds=10.0,
+            is_duration_valid=True,
+        ),
+        model_prediction=ModelPrediction(
+            model_type="autoencoder",
+            anomaly_score=0.0055 if is_anomaly else 0.0018,
+            threshold=0.0032,
+            is_anomaly=is_anomaly,
+        ),
+        familiarity=FamiliarityReport(
+            score=12.4 if is_review else 4.2,
+            threshold=9.25,
+            is_familiar=(not is_review),
+        ),
+        explanation=f"Telemetry assessment for {machine_id}: {status_enum.value}. {operator_note}".strip(),
+        recommended_action="Execute maintenance review per standard operating procedures.",
+        machine_id=machine_id,
+    )
 
 
 def get_scenario_catalog() -> list[dict[str, Any]]:
