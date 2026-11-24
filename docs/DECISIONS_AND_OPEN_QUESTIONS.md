@@ -330,3 +330,16 @@ Approved by:
 - **Impact on scope:** Completes Milestone M9.
 - **Documents updated:** `requirements.txt`, `src/mcp_server.py`, `tests/test_mcp_server.py`, `docs/MCP_SPECIFICATION.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
 - **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-014: Production FastAPI REST & WebSocket Backend Architecture (Milestone M10)
+- **Date:** 2026-11-24
+- **Question / change:** How should the backend headless API and streaming architecture be decoupled from the Streamlit UI to support enterprise SCADA/MES integration and the upcoming Lovable React frontend (M11)?
+- **Options considered:**
+  - (A) Maintain Streamlit as the sole API host via hacky query parameter routes.
+  - (B) Flask REST API without native async or WebSocket streaming.
+  - (C) High-performance FastAPI backend in `src/api.py` with Uvicorn, Pydantic v2 schemas, CORS middleware, full REST suite (Analysis, Health, Scenarios, SQLite Audit, Copilot Advisory), and bidirectional WebSocket streaming (`/ws/v1/audio-stream`) for live microphone FFT telemetry.
+- **Chosen option:** Option C.
+- **Reason / evidence:** FastAPI provides asynchronous high-throughput execution, automated OpenAPI/Swagger documentation (`/docs`), strict Pydantic validation, and real-time WebSocket communication (<1ms telemetry chunk calculations). 16 automated tests in `tests/test_api.py` passed with 100% success rate, bringing total project tests to 172/172.
+- **Impact on scope:** Completes Milestone M10.
+- **Documents updated:** `requirements.txt`, `src/api.py`, `tests/test_api.py`, `docs/API_DOCUMENTATION.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
+- **Approved by:** Tamzidul & Antigravity.

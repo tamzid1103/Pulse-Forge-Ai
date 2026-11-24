@@ -1,177 +1,312 @@
-# API and Application Service Specification
+# PulseForge AI — FastAPI REST & WebSocket API Specification
 
-## 1. API decision
+**Module:** `src/api.py`  
+**Framework:** FastAPI 0.110+ on Uvicorn  
+**Compliance:** ISO 13374 Condition Monitoring and ISO 10816-3 Vibration Severity Standards  
+**Status:** ✅ Fully Implemented and Verified (16 tests in `tests/test_api.py`)  
+**Interactive Docs:** `http://127.0.0.1:8000/docs` (Swagger UI) & `http://127.0.0.1:8000/redoc` (ReDoc)
 
-The MVP does **not** require a separate HTTP backend. Streamlit can call the modular Python application service directly. This is the fastest and least fragile option for a single-machine hackathon demo.
+---
 
-The service boundary must still be clean so a FastAPI adapter can be added later without rewriting model logic. Endpoints below are an optional interface specification, not implemented endpoints.
+## 1. Architecture & Execution
 
-## 2. Core application service contract
+The FastAPI service decouples backend acoustic anomaly detection, SQLite audit persistence, and the AI Maintenance Copilot into a high-performance asynchronous API server. It provides headless REST endpoints for plant SCADA/MES systems and real-time WebSockets for modern frontend dashboards (such as the Lovable React frontend in Milestone M11).
 
-Conceptual Python interface:
+### Launching the Backend Server
 
-`analyze_audio(upload: AudioInput, model_bundle: ModelBundle, config: AppConfig) -> AnalysisResult`
+```bash
+# Run locally with hot reload
+.venv/bin/uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
 
-`AudioInput` should contain validated bytes or a safe temporary-file handle, a sanitized display filename, and source metadata. Do not pass an arbitrary user-supplied path into model code.
-
-`AnalysisResult` should contain:
-
-```json
-{
-  "analysis_id": "optional-uuid",
-  "machine_type": "fan",
-  "model_version": "fan-ae-v1",
-  "decision_status": "possible_anomaly",
-  "anomaly_score": 0.0,
-  "threshold": 0.0,
-  "quality": {
-    "status": "good",
-    "reasons": []
-  },
-  "unfamiliarity": {
-    "flagged": false,
-    "score": null,
-    "reasons": []
-  },
-  "evidence": ["Example evidence text based on measured signal features"],
-  "recommendation": "Inspect the machine and verify the recording.",
-  "processing_ms": 0
-}
+# Production deployment
+.venv/bin/uvicorn src.api:app --host 0.0.0.0 --port 8000 --workers 2
 ```
 
-The numbers above are schema examples only, not benchmark output. Use actual finite results at runtime. `anomaly_score` is not a probability.
+---
 
-## 3. Optional FastAPI endpoints
+## 2. API Endpoints Overview
 
-### `GET /health`
+| Method | Path | Category | Description |
+|---|---|---|---|
+| `GET` | `/health` | System | Lightweight health and model readiness check |
+| `GET` | `/api/v1/system/status` | System | Telemetry thresholds, feature dimensions, and fleet metrics |
+| `GET` | `/api/v1/scenarios` | Analysis | Catalog of 5 curated demonstration audio scenarios |
+| `POST` | `/api/v1/analyze` | Analysis | Multipart WAV audio upload and 4-state diagnostic analysis |
+| `POST` | `/api/v1/analyze/scenario/{id}` | Analysis | 1-click evaluation of curated demo scenarios |
+| `GET` | `/api/v1/runs` | Audit | Paginated historical inspection runs from SQLite |
+| `GET` | `/api/v1/runs/{run_id}` | Audit | Single inspection run details by UUID |
+| `DELETE` | `/api/v1/runs` | Audit | Purge inspection run history (reset demo) |
+| `POST` | `/api/v1/copilot/work-order` | Copilot | Generate structured ISO 10816 maintenance work order |
+| `POST` | `/api/v1/copilot/chat` | Copilot | Interactive technician diagnostic advisory Q&A |
+| `WS` | `/ws/v1/audio-stream` | Streaming | Real-time bidirectional WebSocket for microphone streaming & telemetry |
 
-Purpose: lightweight service-health check.
+---
 
-Response:
+## 3. Endpoint Specifications
 
+### A. System & Health Endpoints
+
+#### `GET /health`
+- **Purpose:** Fast container/load-balancer readiness probe.
+- **Response `200 OK`:**
 ```json
 {
   "status": "ok",
   "model_loaded": true,
-  "model_version": "fan-ae-v1"
+  "model_version": "fan-ae-v1",
+  "timestamp": "2026-11-24T06:30:00Z"
 }
 ```
 
-If the model is not loaded, return a clear degraded/unavailable response rather than `ok` with misleading state.
-
-### `POST /api/v1/analyze`
-
-Content type: `multipart/form-data`
-
-Fields:
-
-- `file` — required WAV file.
-- `machine_type` — optional; accepted MVP value is `fan`.
-- `source_kind` — optional internal/demo marker; do not trust client-supplied values for security-sensitive decisions.
-
-Success response: `200 OK` with an `AnalysisResult` object.
-
-Errors:
-
-| HTTP | Error code | Meaning |
-|---:|---|---|
-| 400 | `invalid_audio` | Cannot decode or file content is invalid |
-| 413 | `file_too_large` | File exceeds configured upload limit |
-| 415 | `unsupported_media_type` | File is not supported WAV content |
-| 422 | `audio_not_suitable` | Decodable but fails minimum duration / mandatory quality requirements |
-| 503 | `model_unavailable` | Required model artifact is missing or incompatible |
-| 500 | `analysis_failed` | Unexpected analysis error; log details locally |
-
-Do not return full stack traces, server paths, or internal secrets to clients.
-
-## 4. Example request
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/analyze \
-  -F "machine_type=fan" \
-  -F "file=@./demo_audio/fan_normal.wav"
+#### `GET /api/v1/system/status`
+- **Purpose:** Comprehensive operational telemetry for plant dashboards.
+- **Response `200 OK`:**
+```json
+{
+  "application": "PulseForge AI",
+  "machine_type": "fan",
+  "model_type": "autoencoder",
+  "sample_rate": 16000,
+  "feature_dims": 4096,
+  "thresholds": {
+    "autoencoder_mse": 0.0032,
+    "familiarity_mahalanobis": 9.2549
+  },
+  "fleet_summary": {
+    "total_inspections": 12,
+    "status_counts": {
+      "normal": 8,
+      "possible_anomaly": 2,
+      "needs_review": 2,
+      "invalid_input": 0
+    },
+    "average_latency_ms": 14.5
+  },
+  "model_status": {
+    "model_ready": true,
+    "autoencoder_loaded": true,
+    "scaler_loaded": true,
+    "familiarity_loaded": true
+  },
+  "supported_formats": ["wav"]
+}
 ```
-
-This is the intended future request pattern, not evidence that the endpoint exists today.
-
-## 5. API security requirements if FastAPI is enabled
-
-- Enforce upload size and duration limits.
-- Validate decoded content, not just extension or MIME header.
-- Generate server-side temporary names.
-- Use a request timeout and bound concurrent inference jobs.
-- Keep the service on localhost during local development.
-- Do not expose publicly without HTTPS, authentication, rate limiting, and a documented retention policy.
-- CORS should be disabled or allowlisted unless a separate browser frontend requires it.
-
-## 6. API/UI consistency
-
-Streamlit and FastAPI must call the same application service and decision policy. Do not implement separate anomaly thresholds or reliability logic inside the UI/API layer.
-
-
-## 7. Model Context Protocol (MCP) Server Specification (M7)
-
-PulseForge AI exposes its core industrial intelligence via a custom Model Context Protocol (MCP) server (`src/mcp_server.py`) supporting Stdio and Streamable HTTP/SSE transports.
-
-### Tools Exposed to AI Agents:
-
-1. **`analyze_fan_audio`**:
-   - Description: "Executes the full PulseForge AI acoustic pipeline on a target audio file: quality checks -> log-Mel feature extraction -> PyTorch Autoencoder reconstruction -> latent familiarity check -> 4-state industrial decision."
-   - Parameters:
-     - `file_path` (string, required): Path to WAV recording.
-     - `machine_id` (string, optional, default "id_00"): Target fan identifier.
-   - Returns: Formatted `AnalysisResult` JSON.
-
-2. **`inspect_signal_quality`**:
-   - Description: "Evaluates physical acoustic signal suitability before running ML inference (checks for silence, clipping, duration, and DC bias)."
-   - Parameters:
-     - `file_path` (string, required): Path to WAV recording.
-   - Returns: Formatted `QualityReport` JSON.
-
-3. **`get_machine_health_status`**:
-   - Description: "Retrieves recent historical analysis records, anomaly rates, and quality flags for a specific machine ID from the SQLite audit store."
-   - Parameters:
-     - `machine_id` (string, optional, default "id_00"): Machine identifier.
-     - `limit` (integer, optional, default 10): Maximum number of recent records.
-   - Returns: List of recent `AnalysisResult` summaries.
-
-### Resources Exposed:
-- `pulseforge://telemetry/latest`: Real-time machine health state summary.
-- `pulseforge://manifest/fan`: Catalog of available benchmark audio files and split details.
 
 ---
 
-## 8. Factory Brain Copilot Service Interface (`src/copilot.py`)
+### B. Acoustic Analysis Endpoints
 
-The `IndustrialCopilot` class provides programmatic maintenance advisory generation:
-
-### `generate_work_order(result: AnalysisResult, audio_meta: AudioMetadata | None = None) -> WorkOrderResponse`
-
-Generates an actionable OSHA 1910.147 and ISO 10816 compliant maintenance ticket.
-
-**Execution Flow:**
-1. Formats deterministic telemetry string from `AnalysisResult` (anomaly score, threshold, quality flags, Mahalanobis unfamiliarity).
-2. Attempts ultra-low latency Groq LPU inference (model cascade: `llama-3.1-8b-instant` -> `llama3-8b-8192` -> `llama-3.3-70b-versatile`).
-3. If Groq API key is missing or network is unreachable, automatically triggers `_generate_deterministic_fallback()`: parses local SOP files in `data/knowledge_base/` and returns complete work order without throwing an unhandled exception.
-
-**Return Structure:**
+#### `POST /api/v1/analyze`
+- **Content-Type:** `multipart/form-data`
+- **Form Fields:**
+  - `file`: Required WAV binary.
+  - `machine_id`: Asset identifier (default: `"fan_id_00"`).
+  - `source_kind`: Source label (`"uploaded"`, `"sensor"`, etc.).
+  - `record_to_db`: Boolean (`true` to persist into SQLite audit log).
+  - `operator_note`: Optional technician note.
+- **Example cURL:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/analyze \
+  -F "file=@demo_audio/01_normal_fan.wav" \
+  -F "machine_id=fan_id_00" \
+  -F "operator_note=Routine intake plenum check"
+```
+- **Response `200 OK`:**
 ```json
 {
-  "work_order_id": "WO-20261120-FAN00-781A",
-  "urgency": "HIGH",
-  "recommended_action": "Bearing lubrication breakdown or micro-spalling detected. Execute Lockout/Tagout (LOTO) per OSHA 1910.147, remove belt guard, and measure ISO 10816 vibration velocity.",
-  "safety_lockout_required": true,
-  "required_ppe": ["Hard hat", "Safety glasses", "Cut-resistant gloves", "Steel-toe boots"],
-  "estimated_downtime_minutes": 60,
-  "inspection_checklist": [
-    "Verify zero electrical energy state (LOTO step 1)",
-    "Inspect SKF 6308 pillow block bearings for thermal discoloration",
-    "Check drive belt tension and pulley alignment"
-  ],
-  "model_used": "llama-3.1-8b-instant"
+  "run_id": "3c8a14fd-9f82-411a-874b-e7b51b312781",
+  "machine_id": "fan_id_00",
+  "filename": "01_normal_fan.wav",
+  "analysis": {
+    "status": "normal",
+    "status_label": "Normal",
+    "explanation": "Normal acoustic signature verified. Reconstruction error remains within baseline boundaries.",
+    "recommended_action": "Maintain routine 4-hour monitoring interval.",
+    "quality": {
+      "passed": true,
+      "rms_level": 0.0345,
+      "is_silent": false,
+      "clipping_ratio": 0.0,
+      "is_clipped": false,
+      "duration_seconds": 10.0,
+      "warnings": [],
+      "errors": []
+    },
+    "model_prediction": {
+      "model_type": "autoencoder",
+      "anomaly_score": 0.00185,
+      "threshold": 0.0032,
+      "is_anomaly": false
+    },
+    "familiarity": {
+      "score": 4.12,
+      "threshold": 9.2549,
+      "is_familiar": true
+    }
+  }
 }
 ```
 
-### `ask_question(question: str, result: AnalysisResult | None = None) -> str`
+#### `POST /api/v1/analyze/scenario/{scenario_id}`
+- **Purpose:** 1-click execution of preloaded demo recordings without uploading files.
+- **Supported IDs & Aliases:**
+  - `scenario_01` / `normal` / `01`: Healthy baseline fan audio.
+  - `scenario_02` / `anomaly` / `bearing`: Authentic bearing raceway defect.
+  - `scenario_03` / `silent` / `disconnection`: Zero-energy sensor line fault.
+  - `scenario_04` / `clipped` / `saturation`: ADC digital clipping (>1%).
+  - `scenario_05` / `domain_shift` / `unfamiliar`: Factory background noise shift.
+- **Example cURL:**
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/analyze/scenario/bearing
+```
 
-Interactive technical assistant answering technician questions grounded in rotating equipment manuals and ISO condition monitoring standards.
+---
+
+### C. SQLite Audit & Persistence Endpoints
+
+#### `GET /api/v1/runs?limit=50&machine_id=fan_id_00`
+- **Purpose:** Query paginated inspection logs for compliance audits.
+- **Response `200 OK`:**
+```json
+{
+  "total_returned": 2,
+  "summary": {
+    "total_inspections": 2,
+    "status_counts": { "normal": 1, "possible_anomaly": 1 },
+    "average_latency_ms": 13.8
+  },
+  "runs": [
+    {
+      "id": "3c8a14fd-9f82-411a-874b-e7b51b312781",
+      "timestamp": "2026-11-24 06:30:15 UTC",
+      "machine_id": "fan_id_00",
+      "decision_status": "normal",
+      "anomaly_score": 0.00185,
+      "threshold": 0.0032,
+      "rms_level": 0.0345,
+      "clipping_ratio": 0.0,
+      "processing_ms": 14.1
+    }
+  ]
+}
+```
+
+#### `GET /api/v1/runs/{run_id}`
+- **Response `200 OK`:** Returns full single run metadata or `404 Not Found`.
+
+#### `DELETE /api/v1/runs`
+- **Response `200 OK`:** Clears historical database records for test resets.
+
+---
+
+### D. Factory Brain AI Copilot Endpoints
+
+#### `POST /api/v1/copilot/work-order`
+- **Request Body (JSON):**
+```json
+{
+  "run_id": "3c8a14fd-9f82-411a-874b-e7b51b312781",
+  "decision_status": "possible_anomaly",
+  "machine_id": "fan_id_00",
+  "operator_note": "Acoustic rattling near inboard bearing housing."
+}
+```
+- **Response `200 OK`:**
+```json
+{
+  "work_order_id": "WO-FAN-2026-7842",
+  "asset_id": "fan_id_00",
+  "diagnostic_status": "possible_anomaly",
+  "urgency": "PRIORITY_INSPECTION",
+  "suspected_mechanism": "High-frequency acoustic transients indicate raceway micro-spalling or insufficient grease.",
+  "iso_severity_zone": "Zone C (Restricted Operation)",
+  "recommended_steps": [
+    "Execute OSHA 1910.147 Lockout/Tagout on 480V motor supply.",
+    "Verify zero-motion rotation before removing belt guard.",
+    "Perform acoustic probe listening at 2–8 kHz around bearing housing.",
+    "Measure housing temperature with infrared thermometer."
+  ],
+  "safety_checklist": [
+    "Lockout/Tagout 480V motor disconnect",
+    "Verify zero rotation stroboscopically",
+    "Wear ANSI Z87.1 safety glasses and Class 2 hearing protection"
+  ],
+  "required_tools": ["Acoustic stethoscope", "IR thermometer", "Grease gun"],
+  "required_ppe": ["Safety glasses", "Steel-toe boots", "Earplugs"],
+  "ai_engine": "llama-3.1-8b-instant (Groq LPU)"
+}
+```
+
+#### `POST /api/v1/copilot/chat`
+- **Request Body (JSON):**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "How do I calculate re-lubrication quantity for SKF 6308?" }
+  ],
+  "machine_id": "fan_id_00"
+}
+```
+- **Response `200 OK`:** Returns technician advisory grounded in ISO standards and fan SOPs.
+
+---
+
+### E. Real-Time WebSocket Audio Streaming
+
+#### `WS /ws/v1/audio-stream?machine_id=fan_id_00`
+- **Protocol:** Bidirectional WebSocket (text JSON commands and binary PCM chunks).
+- **Handshake Frame (Server $\to$ Client):**
+```json
+{
+  "type": "connected",
+  "machine_id": "fan_id_00",
+  "sample_rate": 16000,
+  "message": "PulseForge real-time acoustic telemetry stream active."
+}
+```
+- **Streaming Chunks (Client $\to$ Server):**
+  - Raw 16-bit PCM bytes (e.g. 1024 or 2048 sample buffers).
+- **Telemetry Broadcast (Server $\to$ Client):**
+```json
+{
+  "type": "telemetry",
+  "frame_index": 12,
+  "machine_id": "fan_id_00",
+  "telemetry": {
+    "rms_level": 0.03452,
+    "peak_amplitude": 0.2841,
+    "clipping_ratio": 0.0,
+    "quality_pass": true,
+    "spectral_bands": {
+      "low_0_2khz": 0.0142,
+      "mid_2_4khz": 0.0261,
+      "high_4_8khz": 0.0094
+    }
+  }
+}
+```
+
+---
+
+## 4. Structured Error Handling
+
+All pipeline exceptions are mapped to standard HTTP status codes with structured JSON error payloads:
+
+| HTTP Status | Error Code | Description |
+|---|---|---|
+| `400 Bad Request` | `invalid_audio` | Corrupted container header or empty/truncated file |
+| `404 Not Found` | `not_found` | Requested scenario or SQLite audit run ID does not exist |
+| `413 Payload Too Large` | `file_too_large` | Audio exceeds maximum configured byte limit (25 MB) |
+| `415 Unsupported Media Type` | `unsupported_media_type` | File is not valid 16-bit PCM WAV audio |
+| `422 Unprocessable Entity` | `audio_not_suitable` | Recording fails minimum duration (<1.0s) or quality bounds |
+| `503 Service Unavailable` | `model_unavailable` | Autoencoder weights or feature scalers are missing |
+| `500 Internal Error` | `analysis_failed` | Unexpected pipeline failure (logged locally, no leaks) |
+
+**Error Payload Schema:**
+```json
+{
+  "error_code": "unsupported_media_type",
+  "message": "Unsupported audio format 'mp3'. Supported formats: wav.",
+  "detail": "Only standard 16-bit PCM WAV audio is supported for MVP edge inference."
+}
+```

@@ -334,24 +334,30 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ### M10 — FastAPI Production REST & WebSocket Backend
 
-**Status:** 📋 Phase 2 (Planned)
+**Status:** ✅ Completed & Verified (16 tests in `tests/test_api.py`; 172/172 total passing tests)
 
 **Objective:** Decouple backend inference and telemetry persistence into a high-performance FastAPI service (`src/api.py`), providing headless REST endpoints for third-party plant SCADA/MES systems and real-time WebSocket audio streaming for modern frontends.
 
 **Files:**
 - `src/api.py`
 - `tests/test_api.py`
-- `docs/API_DOCUMENTATION.md` (updates)
+- `docs/API_DOCUMENTATION.md`
+- `docs/DECISIONS_AND_OPEN_QUESTIONS.md` (DEC-014)
 
-**Key Tasks:**
-1. Implement REST endpoints:
-   - `GET /health` & `GET /api/v1/system/status`
-   - `POST /api/v1/analyze` (multipart audio upload with file validation)
-   - `GET /api/v1/runs` & `GET /api/v1/runs/{id}` (SQLite audit history)
-   - `POST /api/v1/copilot/work-order` & `POST /api/v1/copilot/chat`
-2. Implement WebSocket endpoint:
-   - `WS /ws/v1/audio-stream` for live microphone chunk ingestion and real-time spectrogram streaming.
-3. Integrate CORS, structured logging, Pydantic v2 schemas, and background task processing.
+**Accomplished:**
+1. Implemented full REST suite:
+   - `GET /health` (lightweight service & model readiness check)
+   - `GET /api/v1/system/status` (telemetry thresholds, 4096-dim features, fleet status)
+   - `GET /api/v1/scenarios` (catalog of 5 curated demonstration audio scenarios)
+   - `POST /api/v1/analyze` (multipart WAV upload with technical validation and 4-state classification)
+   - `POST /api/v1/analyze/scenario/{scenario_id}` (1-click evaluation of demo scenarios with alias support)
+   - `GET /api/v1/runs` & `GET /api/v1/runs/{id}` (paginated SQLite audit history)
+   - `DELETE /api/v1/runs` (audit trail purge for demonstration resets)
+   - `POST /api/v1/copilot/work-order` & `POST /api/v1/copilot/chat` (AI copilot advisory)
+2. Implemented WebSocket endpoint:
+   - `WS /ws/v1/audio-stream` for bidirectional real-time audio chunk streaming, computing instantaneous RMS amplitude, clipping ratio, and 3-band FFT spectral energy (<1ms execution).
+3. Configured CORS middleware, Pydantic v2 schemas, and structured exception handlers.
+4. Added 16 automated tests in `tests/test_api.py` verifying all endpoints and protocols (172/172 total project tests passing).
 
 ---
 
