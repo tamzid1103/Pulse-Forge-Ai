@@ -239,3 +239,37 @@ def test_copilot_model_fallback_on_404(
     assert "Fallback model response succeeded." in resp
     assert mock_client.chat.completions.create.call_count == 2
 
+
+def test_sanitize_sensitive_tokens() -> None:
+    """Verify CWE-209 secret redaction masks API keys and tokens."""
+    from src.copilot import sanitize_sensitive_tokens
+
+    raw_err = "Failed request to https://api.groq.com with key gsk_AbCdEf1234567890XYZ and Bearer my_secret_token_12345"
+    sanitized = sanitize_sensitive_tokens(raw_err)
+    assert "gsk_AbCdEf1234567890XYZ" not in sanitized
+    assert "gsk_********************" in sanitized
+    assert "Bearer [REDACTED]" in sanitized
+
+
+@patch("src.copilot.Groq")
+def test_copilot_masks_token_in_error_message(
+    mock_groq_cls: MagicMock,
+    sample_anomaly_result: AnalysisResult,
+) -> None:
+    """Verify that if an upstream exception leaks the API key, it is redacted before display."""
+    mock_client = MagicMock()
+    mock_groq_cls.return_value = mock_client
+    mock_client.chat.completions.create.side_effect = Exception(
+        "Unauthorized: Invalid auth credentials header Bearer gsk_secret_leak_12345678"
+    )
+
+    copilot = IndustrialCopilot(api_key="gsk_secret_leak_12345678")
+    resp = copilot.chat_response(
+        messages=[{"role": "user", "content": "What is the status?"}],
+        result=sample_anomaly_result,
+    )
+
+    assert "gsk_secret_leak_12345678" not in resp
+    assert "gsk_********************" in resp or "[REDACTED]" in resp
+
+

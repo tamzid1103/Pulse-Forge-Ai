@@ -20,11 +20,27 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 from src.schemas import AnalysisResult, DecisionStatus
 
 logger = logging.getLogger("pulseforge.copilot")
+
+
+def sanitize_sensitive_tokens(message: str | Exception) -> str:
+    """
+    Sanitize sensitive API keys, authorization tokens, and credentials from
+    exception representations and error strings (CWE-209).
+    """
+    text = str(message)
+    # Mask Groq API keys (gsk_...)
+    text = re.sub(r"gsk_[A-Za-z0-9_-]{8,}", "gsk_********************", text)
+    # Mask Bearer tokens
+    text = re.sub(r"Bearer\s+[A-Za-z0-9_\-\.]{8,}", "Bearer [REDACTED]", text, flags=re.IGNORECASE)
+    # Mask basic auth credentials in URLs
+    text = re.sub(r"://([^:]+):([^@]+)@", r"://\1:[REDACTED]@", text)
+    return text
 
 # Try importing groq safely
 try:
@@ -297,9 +313,10 @@ Please generate the maintenance work order for the following diagnostic run:
             raise last_error or RuntimeError("All candidate Groq models failed.")
 
         except Exception as e:
-            logger.warning("Groq work order generation failed (%s). Falling back to SOP.", e)
+            sanitized_err = sanitize_sensitive_tokens(e)
+            logger.warning("Groq work order generation failed (%s). Falling back to SOP.", sanitized_err)
             fallback = self._deterministic_work_order(result, machine_id)
-            fallback["warning"] = f"Generated via offline SOP fallback (Groq error: {e})"
+            fallback["warning"] = f"Generated via offline SOP fallback (Groq error: {sanitized_err})"
             return fallback
 
     def chat_response(
@@ -378,10 +395,11 @@ RULES FOR YOUR RESPONSES:
             raise last_error or RuntimeError("All candidate Groq models failed.")
 
         except Exception as e:
-            logger.warning("Groq chat failed (%s). Falling back to rule-based response.", e)
+            sanitized_err = sanitize_sensitive_tokens(e)
+            logger.warning("Groq chat failed (%s). Falling back to rule-based response.", sanitized_err)
             sop_reply = self._deterministic_chat_response(messages, result)
             return (
-                f"**[Offline SOP Mode]** Groq API connection could not be established ({e}).\n\n"
+                f"**[Offline SOP Mode]** Groq API connection could not be established ({sanitized_err}).\n\n"
                 f"{sop_reply}"
             )
 
