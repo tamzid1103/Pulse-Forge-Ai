@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 import datetime
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -170,13 +171,24 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     )
 
     # Configure CORS for multi-client access (Streamlit, Lovable, React, SCADA)
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    cors_origins_env = os.environ.get("PULSEFORGE_CORS_ORIGINS", "")
+    if cors_origins_env.strip():
+        allowed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=allowed_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    else:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|https://.*\.streamlit\.app|https://.*\.lovable\.app|https://.*\.lovableproject\.com",
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     # ---------------------------------------------------------------------------
     # Structured Exception Handlers conforming to docs/API_DOCUMENTATION.md
@@ -312,7 +324,28 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         familiarity gating, and 4-state deterministic decision policy.
         """
         svc = get_service()
-        contents = await file.read()
+        max_bytes = svc.config.audio.max_upload_bytes
+        chunk_size = 64 * 1024  # 64 KB streaming chunks
+        chunks: list[bytes] = []
+        total_size = 0
+
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            total_size += len(chunk)
+            if total_size > max_bytes:
+                raise HTTPException(
+                    status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+                    detail={
+                        "error_code": "file_too_large",
+                        "message": f"Uploaded file size exceeds maximum limit of {max_bytes} bytes.",
+                        "detail": f"Maximum allowed file size is {max_bytes // (1024 * 1024)} MB.",
+                    },
+                )
+            chunks.append(chunk)
+
+        contents = b"".join(chunks)
         filename = file.filename or "uploaded.wav"
 
         if len(contents) == 0:

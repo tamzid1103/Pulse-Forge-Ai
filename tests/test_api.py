@@ -302,3 +302,29 @@ def test_websocket_scenario_evaluation(client: TestClient) -> None:
         assert res["type"] == "analysis_result"
         assert res["scenario"] == "scenario_01"
         assert res["analysis"]["status"] == "normal"
+
+
+def test_analyze_upload_oversized_audio(client: TestClient) -> None:
+    """Test uploading audio exceeding max_upload_bytes raises HTTP 413."""
+    # 26 MB payload (exceeding 25 MB default limit)
+    oversized_bytes = b"0" * (26 * 1024 * 1024)
+    files = {"file": ("giant.wav", oversized_bytes, "audio/wav")}
+    response = client.post("/api/v1/analyze", files=files)
+    assert response.status_code == 413
+    assert response.json()["detail"]["error_code"] == "file_too_large"
+
+
+def test_cors_preflight_and_origin(client: TestClient) -> None:
+    """Test CORS preflight returns correct allowed origin headers."""
+    response = client.options(
+        "/api/v1/analyze",
+        headers={
+            "Origin": "http://localhost:8501",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:8501"
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
