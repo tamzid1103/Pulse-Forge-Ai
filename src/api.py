@@ -72,7 +72,11 @@ class WorkOrderRequest(BaseModel):
     )
     machine_id: str = Field(
         default="fan_id_00",
-        description="Target machine equipment identifier (e.g. 'fan_id_00').",
+        description="Target machine equipment identifier (e.g. 'fan_id_00', 'pump_id_00').",
+    )
+    machine_type: str = Field(
+        default="fan",
+        description="Machine equipment family ('fan', 'pump', 'valve', 'slider').",
     )
     operator_note: str = Field(
         default="",
@@ -286,6 +290,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         return {
             "application": "PulseForge AI",
             "machine_type": "fan",
+            "supported_machine_types": list(svc.config.supported_machine_types),
+            "available_machine_types": svc.registry.available_machine_types(),
+            "model_registry": svc.registry.get_status_summary(),
             "model_type": "autoencoder",
             "sample_rate": svc.config.audio.sample_rate,
             "feature_dims": svc.config.model.input_dim,
@@ -300,11 +307,28 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         }
 
     @app.get("/api/v1/scenarios", tags=["Analysis"])
-    async def list_scenarios() -> list[dict[str, Any]]:
+    async def list_scenarios(
+        machine_type: str | None = Query(
+            default=None,
+            description="Optional filter: 'fan', 'pump', 'valve', 'slider', or 'all'.",
+        ),
+    ) -> list[dict[str, Any]]:
         """
         Returns the catalog of bundled curated demonstration scenarios.
+        Defaults to the 5 core fan scenarios for backward compatibility; pass machine_type=all
+        or a specific machine family for multi-machine fleet scenarios.
         """
-        return get_scenario_catalog()
+        if machine_type is None:
+            return get_scenario_catalog(include_fleet=False)
+        return get_scenario_catalog(include_fleet=True, machine_type=machine_type)
+
+    @app.get("/api/v1/fleet/scenarios", tags=["Analysis"])
+    async def list_fleet_scenarios() -> list[dict[str, Any]]:
+        """
+        Returns the complete multi-machine demonstration scenario catalog across
+        fans, pumps, valves, and linear slide rails.
+        """
+        return get_scenario_catalog(include_fleet=True, machine_type="all")
 
     # ---------------------------------------------------------------------------
     # Acoustic Analysis Endpoints
@@ -313,6 +337,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     async def analyze_audio_upload(
         file: UploadFile = File(..., description="Multipart WAV audio recording"),
         machine_id: str = Form("fan_id_00", description="Equipment asset ID"),
+        machine_type: str = Form("fan", description="Machine family ('fan', 'pump', 'valve', 'slider')"),
         source_kind: str = Form("uploaded", description="Source classification"),
         record_to_db: bool = Form(True, description="Persist audit record in SQLite"),
         operator_note: str = Form("", description="Optional technician note"),
@@ -362,7 +387,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             source=contents,
             filename=filename,
             machine_id=machine_id,
-            machine_type="fan",
+            machine_type=machine_type,
             source_kind=source_kind,
             record_to_db=record_to_db,
             operator_note=operator_note,
@@ -410,14 +435,14 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     async def analyze_scenario(
         scenario_id: str,
         machine_id: str = Form("fan_id_00"),
+        machine_type: str | None = Form(None),
         record_to_db: bool = Form(True),
     ) -> dict[str, Any]:
         """
         Executes a 1-click evaluation of a bundled demonstration scenario.
-        Accepts scenario identifiers: scenario_01 (normal), scenario_02 (anomaly),
-        scenario_03 (silent), scenario_04 (clipped), scenario_05 (domain_shift).
+        Supports scenarios 01-05 (fan) and 06-11 (pump, valve, slider).
         """
-        catalog = get_scenario_catalog()
+        catalog = get_scenario_catalog(include_fleet=True, machine_type="all")
         matched = None
         s_id_clean = scenario_id.lower().strip()
         for item in catalog:
@@ -438,12 +463,13 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
                 detail=f"Scenario audio file missing at {file_path}",
             )
 
+        target_type = machine_type or matched.get("machine_type", "fan")
         svc = get_service()
         result, signal, run_id = svc.analyze_audio(
             source=file_path,
             filename=file_path.name,
             machine_id=machine_id,
-            machine_type="fan",
+            machine_type=target_type,
             source_kind="demo_sample",
             record_to_db=record_to_db,
             operator_note=f"Demo Scenario: {matched['label']}",
@@ -519,6 +545,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             run_id=req.run_id,
             decision_status=req.decision_status,
             machine_id=req.machine_id,
+            machine_type=req.machine_type,
             operator_note=req.operator_note,
         )
         wo = cop.generate_work_order(
@@ -708,6 +735,7 @@ def _resolve_analysis_result(
     run_id: str | None,
     decision_status: str,
     machine_id: str,
+    machine_type: str = "fan",
     operator_note: str = "",
 ) -> AnalysisResult:
     """
@@ -768,6 +796,7 @@ def _resolve_analysis_result(
                 explanation=record.get("evidence", f"Empirical run record {run_id}"),
                 recommended_action=record.get("recommendation", "Execute standard plant SOP."),
                 machine_id=record.get("machine_id", machine_id),
+                machine_type=record.get("machine_type", machine_type),
             )
 
     # Synthesize typed result
@@ -805,15 +834,20 @@ def _resolve_analysis_result(
         explanation=f"Telemetry assessment for {machine_id}: {status_enum.value}. {operator_note}".strip(),
         recommended_action="Execute maintenance review per standard operating procedures.",
         machine_id=machine_id,
+        machine_type=machine_type,
     )
 
 
-def get_scenario_catalog() -> list[dict[str, Any]]:
+def get_scenario_catalog(
+    include_fleet: bool = False,
+    machine_type: str | None = None,
+) -> list[dict[str, Any]]:
     """Helper returning metadata for bundled demonstration scenarios."""
     demo_dir = PROJECT_ROOT / "demo_audio"
-    return [
+    fan_scenarios = [
         {
             "id": "scenario_01",
+            "machine_type": "fan",
             "aliases": ["01", "normal", "scenario_01", "01_normal_fan"],
             "label": "01 Normal Fan Baseline",
             "filename": "01_normal_fan.wav",
@@ -823,6 +857,7 @@ def get_scenario_catalog() -> list[dict[str, Any]]:
         },
         {
             "id": "scenario_02",
+            "machine_type": "fan",
             "aliases": ["02", "anomaly", "bearing", "scenario_02", "02_bearing_anomaly"],
             "label": "02 Bearing Raceway Anomaly",
             "filename": "02_bearing_anomaly.wav",
@@ -832,6 +867,7 @@ def get_scenario_catalog() -> list[dict[str, Any]]:
         },
         {
             "id": "scenario_03",
+            "machine_type": "fan",
             "aliases": ["03", "silent", "disconnection", "scenario_03", "03_silent_sensor_failure"],
             "label": "03 Silent Sensor Failure",
             "filename": "03_silent_sensor_failure.wav",
@@ -841,6 +877,7 @@ def get_scenario_catalog() -> list[dict[str, Any]]:
         },
         {
             "id": "scenario_04",
+            "machine_type": "fan",
             "aliases": ["04", "clipped", "saturation", "scenario_04", "04_clipped_sensor_saturation"],
             "label": "04 Clipped Sensor Saturation",
             "filename": "04_clipped_sensor_saturation.wav",
@@ -850,6 +887,7 @@ def get_scenario_catalog() -> list[dict[str, Any]]:
         },
         {
             "id": "scenario_05",
+            "machine_type": "fan",
             "aliases": ["05", "domain_shift", "unfamiliar", "scenario_05", "05_unfamiliar_operating_noise"],
             "label": "05 Unfamiliar Operating Noise",
             "filename": "05_unfamiliar_operating_noise.wav",
@@ -858,6 +896,78 @@ def get_scenario_catalog() -> list[dict[str, Any]]:
             "description": "Acoustic background noise shift (Mahalanobis distance > 9.2549). Flags domain shift.",
         },
     ]
+
+    fleet_scenarios = [
+        {
+            "id": "scenario_06",
+            "machine_type": "pump",
+            "aliases": ["06", "pump_normal", "scenario_06", "06_pump_normal"],
+            "label": "06 Centrifugal Pump Normal",
+            "filename": "06_pump_normal.wav",
+            "file_path": str((demo_dir / "06_pump_normal.wav").resolve()),
+            "expected_status": "normal",
+            "description": "MIMII Centrifugal Pump ID 00 healthy steady-flow acoustic signature.",
+        },
+        {
+            "id": "scenario_07",
+            "machine_type": "pump",
+            "aliases": ["07", "pump_anomaly", "cavitation", "scenario_07", "07_pump_anomaly"],
+            "label": "07 Pump Impeller / Seal Anomaly",
+            "filename": "07_pump_anomaly.wav",
+            "file_path": str((demo_dir / "07_pump_anomaly.wav").resolve()),
+            "expected_status": "possible_anomaly",
+            "description": "MIMII Centrifugal Pump ID 00 abnormal cavitation / bearing wear recording.",
+        },
+        {
+            "id": "scenario_08",
+            "machine_type": "valve",
+            "aliases": ["08", "valve_normal", "scenario_08", "08_valve_normal"],
+            "label": "08 Control Valve Normal",
+            "filename": "08_valve_normal.wav",
+            "file_path": str((demo_dir / "08_valve_normal.wav").resolve()),
+            "expected_status": "normal",
+            "description": "MIMII Industrial Valve ID 00 crisp normal actuation cycle.",
+        },
+        {
+            "id": "scenario_09",
+            "machine_type": "valve",
+            "aliases": ["09", "valve_anomaly", "scenario_09", "09_valve_anomaly"],
+            "label": "09 Valve Seat Leak Anomaly",
+            "filename": "09_valve_anomaly.wav",
+            "file_path": str((demo_dir / "09_valve_anomaly.wav").resolve()),
+            "expected_status": "possible_anomaly",
+            "description": "MIMII Industrial Valve ID 00 abnormal seat leak / solenoid chatter.",
+        },
+        {
+            "id": "scenario_10",
+            "machine_type": "slider",
+            "aliases": ["10", "slider_normal", "scenario_10", "10_slider_normal"],
+            "label": "10 Slide Rail Normal",
+            "filename": "10_slider_normal.wav",
+            "file_path": str((demo_dir / "10_slider_normal.wav").resolve()),
+            "expected_status": "normal",
+            "description": "MIMII Linear Slide Rail ID 00 smooth lubricated traverse stroke.",
+        },
+        {
+            "id": "scenario_11",
+            "machine_type": "slider",
+            "aliases": ["11", "slider_anomaly", "scenario_11", "11_slider_anomaly"],
+            "label": "11 Slide Rail Bearing Anomaly",
+            "filename": "11_slider_anomaly.wav",
+            "file_path": str((demo_dir / "11_slider_anomaly.wav").resolve()),
+            "expected_status": "possible_anomaly",
+            "description": "MIMII Linear Slide Rail ID 00 ball-screw pitting / lubrication defect.",
+        },
+    ]
+
+    if not include_fleet and machine_type is None:
+        return fan_scenarios
+
+    all_scenarios = fan_scenarios + fleet_scenarios
+    if machine_type and machine_type.lower() != "all":
+        mt = machine_type.lower().strip()
+        return [s for s in all_scenarios if s.get("machine_type") == mt]
+    return all_scenarios
 
 
 # Default app instance for uvicorn

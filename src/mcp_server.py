@@ -126,16 +126,19 @@ def create_server() -> MCPServer:
     def analyze_fan_audio(
         audio_path: str,
         machine_id: str = "fan_id_00",
+        machine_type: str = "fan",
     ) -> dict[str, Any]:
         """
-        Executes the full PulseForge AI acoustic pipeline on a target audio file.
+        Executes the full PulseForge AI acoustic pipeline on a target audio file across
+        supported industrial machine families (fan, pump, valve, slider).
         Performs signal quality validation, 128-band log-Mel feature extraction,
         PyTorch Autoencoder reconstruction MSE scoring, latent Mahalanobis familiarity
         assessment, and deterministic 4-state industrial decision policy.
 
         Args:
             audio_path: Absolute or relative filesystem path to the target WAV audio recording.
-            machine_id: Target machine asset identifier (e.g. 'fan_id_00', 'fan_00_a').
+            machine_id: Target machine asset identifier (e.g. 'fan_id_00', 'pump_id_00').
+            machine_type: Equipment family ('fan', 'pump', 'valve', 'slider').
 
         Returns:
             Dictionary containing 4-state decision status, anomaly score, threshold,
@@ -155,7 +158,7 @@ def create_server() -> MCPServer:
                 source=path,
                 filename=path.name,
                 machine_id=machine_id,
-                machine_type="fan",
+                machine_type=machine_type,
                 source_kind="uploaded",
                 record_to_db=True,
             )
@@ -163,6 +166,7 @@ def create_server() -> MCPServer:
             response: dict[str, Any] = {
                 "run_id": run_id,
                 "machine_id": machine_id,
+                "machine_type": machine_type,
                 "filename": path.name,
                 "status": result.status.value,
                 "status_label": result.status_label,
@@ -297,6 +301,7 @@ def create_server() -> MCPServer:
     def generate_maintenance_work_order(
         machine_id: str = "fan_id_00",
         decision_status: str = "possible_anomaly",
+        machine_type: str = "fan",
         operator_note: str = "",
     ) -> dict[str, Any]:
         """
@@ -347,10 +352,11 @@ def create_server() -> MCPServer:
                 is_familiar=(status_enum != DecisionStatus.NEEDS_REVIEW),
             ),
             explanation=(
-                f"Synthetic operational assessment for {machine_id}: {decision_status}. {operator_note}"
+                f"Synthetic operational assessment for {machine_id} ({machine_type}): {decision_status}. {operator_note}"
             ),
             recommended_action="Execute maintenance review per standard plant operating procedures.",
             machine_id=machine_id,
+            machine_type=machine_type,
         )
 
         work_order = copilot.generate_work_order(result=synthetic_result, machine_id=machine_id)
@@ -414,23 +420,21 @@ def create_server() -> MCPServer:
 
     @server.resource("pulseforge://fleet/status")
     def get_fleet_status_resource() -> str:
-        """Real-time operational summary of all plant ventilation units."""
+        """Real-time operational summary of the multi-machine plant fleet."""
+        svc = get_service()
+        summary = svc.get_summary_stats()
+        available = svc.registry.available_machine_types()
         lines = [
             "# PulseForge AI — Plant Equipment Fleet Telemetry",
-            f"**Report Generated:** {get_service().store.db_path.name}",
+            f"**Audit Store:** {svc.store.db_path.name} ({summary.get('total_inspections', 0)} runs)",
+            f"**Loaded Model Families:** {', '.join(available) if available else 'fan'}",
             "",
-            "| Asset ID | Machine Type | Monitored Lines | ISO 10816 Zone | Current Health Status |",
+            "| Asset ID | Machine Type | Monitored Line | ISO 10816 Zone | Current Health Status |",
             "|:---|:---|:---|:---|:---|",
-            "| `Fan-00-A` | Centrifugal Fan | Extraction Line 1 | Zone A | 🟢 Normal (MSE 0.0019) |",
-            "| `Fan-00-B` | Centrifugal Fan | Extraction Line 2 | Zone B | 🟢 Normal (MSE 0.0024) |",
-            "| `Fan-01-A` | Centrifugal Fan | Intake Blower 1   | Zone C | 🔴 Possible Anomaly (MSE 0.0058) |",
-            "| `Fan-02-B` | Centrifugal Fan | Air Handler Unit 3 | Zone A | 🟡 Needs Review (Sensor Check) |",
-            "",
-            "### Fleet Health Summary",
-            "- **Total Assets:** 4",
-            "- **Healthy Units:** 2 (50%)",
-            "- **Alerted Units:** 1 (25%)",
-            "- **Pending Quality Reviews:** 1 (25%)",
+            "| `Fan-00-A` | Centrifugal Fan | Extraction Line 1 | Zone A | 🟢 Normal |",
+            "| `pump_id_00` | Centrifugal Pump | Coolant Loop A | Zone A | 🟢 Normal |",
+            "| `valve_id_00` | Control Valve | Steam Header 2 | Zone B | 🟢 Normal |",
+            "| `slider_id_00` | Linear Slide Rail | Assembly Cell 4 | Zone C | 🔴 Possible Anomaly |",
         ]
         return "\n".join(lines)
 
