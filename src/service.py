@@ -16,21 +16,19 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 from src.audio_io import AudioSignal, load_audio
 from src.config import AppConfig, get_default_config
 from src.decision import create_invalid_input_result, evaluate_decision_policy
 from src.exceptions import (
     AudioValidationError,
-    CorruptAudioError,
-    FileTooLargeError,
-    InvalidFormatError,
     PulseForgeError,
 )
 from src.familiarity import LatentFamiliarityEstimator
 from src.features import FeatureScaler, extract_features
 from src.models.autoencoder import AutoencoderDetector
+from src.models.registry import MachineModelBundle, ModelRegistry
 from src.persistence import AnalysisStore
 from src.quality import check_signal_quality
 from src.schemas import (
@@ -57,53 +55,32 @@ class PulseForgeService:
         self.config = config or get_default_config()
         self.store = store or AnalysisStore()
 
-        self._detector: AutoencoderDetector | None = None
-        self._scaler: FeatureScaler | None = None
-        self._familiarity: LatentFamiliarityEstimator | None = None
-        self._load_models()
+        self.registry = ModelRegistry(
+            model_dir=self.config.paths.model_artifacts_dir,
+            supported_types=self.config.supported_machine_types,
+        )
 
-    def _load_models(self) -> None:
-        """Load trained model artifacts from the configured artifact directory."""
-        model_dir = self.config.paths.model_artifacts_dir
-
-        ae_path = model_dir / "autoencoder_fan_id_00.pt"
-        if ae_path.is_file():
-            try:
-                self._detector = AutoencoderDetector.load(ae_path)
-                logger.info("Loaded Autoencoder detector from %s", ae_path)
-            except Exception as e:
-                logger.error("Failed to load Autoencoder from %s: %s", ae_path, e)
-
-        scaler_path = model_dir / "scaler_params.json"
-        if scaler_path.is_file():
-            try:
-                self._scaler = FeatureScaler.load(scaler_path)
-                logger.info("Loaded FeatureScaler from %s", scaler_path)
-            except Exception as e:
-                logger.error("Failed to load FeatureScaler from %s: %s", scaler_path, e)
-
-        fam_path = model_dir / "familiarity_fan_id_00.joblib"
-        if fam_path.is_file():
-            try:
-                self._familiarity = LatentFamiliarityEstimator.load(fam_path)
-                logger.info("Loaded Familiarity estimator from %s", fam_path)
-            except Exception as e:
-                logger.error("Failed to load Familiarity from %s: %s", fam_path, e)
+    def _get_bundle(self, machine_type: str = "fan") -> MachineModelBundle | None:
+        """Retrieve cached MachineModelBundle for a machine family."""
+        return self.registry.get_bundle(machine_type)
 
     @property
     def detector(self) -> AutoencoderDetector | None:
-        """Loaded AutoencoderDetector instance."""
-        return self._detector
+        """Loaded default (fan) AutoencoderDetector instance for backward compatibility."""
+        b = self._get_bundle(self.config.default_machine_type)
+        return b.detector if b else None
 
     @property
     def scaler(self) -> FeatureScaler | None:
-        """Loaded FeatureScaler instance."""
-        return self._scaler
+        """Loaded default (fan) FeatureScaler instance for backward compatibility."""
+        b = self._get_bundle(self.config.default_machine_type)
+        return b.scaler if b else None
 
     @property
     def familiarity(self) -> LatentFamiliarityEstimator | None:
-        """Loaded LatentFamiliarityEstimator instance."""
-        return self._familiarity
+        """Loaded default (fan) LatentFamiliarityEstimator instance for backward compatibility."""
+        b = self._get_bundle(self.config.default_machine_type)
+        return b.familiarity if b else None
 
     def get_history(
         self, limit: int = 10, machine_id: str | None = None
@@ -142,29 +119,30 @@ class PulseForgeService:
 
     @property
     def is_model_ready(self) -> bool:
-        """Return True if all ML model artifacts are loaded and ready for inference."""
-        return (
-            self._detector is not None
-            and self._scaler is not None
-            and self._familiarity is not None
-            and self._detector.is_trained
-            and self._detector.threshold is not None
-        )
+        """Return True if the default machine model artifacts are loaded and ready."""
+        return self.registry.is_ready(self.config.default_machine_type)
 
-    def get_model_status(self) -> dict[str, Any]:
+    def get_model_status(self, machine_type: str | None = None) -> dict[str, Any]:
         """Return operational status and metadata of loaded models."""
-        return {
-            "model_ready": self.is_model_ready,
-            "autoencoder_loaded": self._detector is not None,
-            "autoencoder_threshold": (
-                self._detector.threshold if self._detector else None
-            ),
-            "scaler_loaded": self._scaler is not None,
-            "familiarity_loaded": self._familiarity is not None,
-            "familiarity_threshold": (
-                self._familiarity.threshold if self._familiarity else None
-            ),
-        }
+        target = (machine_type or self.config.default_machine_type).lower().strip()
+        bundle = self._get_bundle(target)
+        base_status = (
+            bundle.to_status_dict()
+            if bundle is not None
+            else {
+                "machine_type": target,
+                "model_ready": False,
+                "autoencoder_loaded": False,
+                "autoencoder_threshold": None,
+                "scaler_loaded": False,
+                "familiarity_loaded": False,
+                "familiarity_threshold": None,
+            }
+        )
+        base_status["supported_machine_types"] = list(self.config.supported_machine_types)
+        base_status["available_machine_types"] = self.registry.available_machine_types()
+        base_status["registry"] = self.registry.get_status_summary()
+        return base_status
 
     def analyze_audio(
         self,
@@ -195,6 +173,8 @@ class PulseForgeService:
             - str | None: SQLite record ID if persisted.
         """
         start_time = time.perf_counter()
+        m_type = machine_type.lower().strip()
+        can_persist = record_to_db and (m_type in self.config.supported_machine_types)
 
         # Step 1: Safe Audio Decoding & Technical Header Validation
         try:
@@ -221,11 +201,11 @@ class PulseForgeService:
             result = create_invalid_input_result(
                 error_message=str(e),
                 machine_id=machine_id,
-                machine_type=machine_type,
+                machine_type=m_type,
             )
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             rec_id = None
-            if record_to_db:
+            if can_persist:
                 rec_id = self.store.save_analysis(
                     result=result,
                     processing_ms=elapsed_ms,
@@ -259,7 +239,52 @@ class PulseForgeService:
                 model_prediction=None,
                 familiarity=None,
                 machine_id=machine_id,
-                machine_type=machine_type,
+                machine_type=m_type,
+                metadata=schema_metadata,
+            )
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            rec_id = None
+            if can_persist:
+                rec_id = self.store.save_analysis(
+                    result=result,
+                    processing_ms=elapsed_ms,
+                    source_kind=source_kind,
+                    input_label=filename,
+                    operator_note=operator_note,
+                )
+            return result, audio_signal, rec_id
+
+        # Step 3: Resolve machine-specific model bundle & extract features
+        if m_type not in self.config.supported_machine_types:
+            result = create_invalid_input_result(
+                error_message=(
+                    f"Unsupported machine type '{machine_type}'. "
+                    f"Supported: {', '.join(self.config.supported_machine_types)}."
+                ),
+                metadata=schema_metadata,
+                machine_id=machine_id,
+                machine_type=m_type,
+            )
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            rec_id = None
+            if record_to_db and m_type in self.config.supported_machine_types:
+                rec_id = self.store.save_analysis(
+                    result=result,
+                    processing_ms=elapsed_ms,
+                    source_kind=source_kind,
+                    input_label=filename,
+                    operator_note=operator_note,
+                )
+            return result, audio_signal, rec_id
+
+        bundle = self._get_bundle(m_type)
+        if bundle is None or not bundle.is_ready:
+            result = evaluate_decision_policy(
+                quality=quality_report,
+                model_prediction=None,
+                familiarity=None,
+                machine_id=machine_id,
+                machine_type=m_type,
                 metadata=schema_metadata,
             )
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
@@ -274,42 +299,33 @@ class PulseForgeService:
                 )
             return result, audio_signal, rec_id
 
-        # Step 3: Feature Extraction (128 Log-Mel Bins, 1.0s window, 0.5s hop)
-        if not self.is_model_ready:
-            result = evaluate_decision_policy(
-                quality=quality_report,
-                model_prediction=None,
-                familiarity=None,
-                machine_id=machine_id,
-                machine_type=machine_type,
-                metadata=schema_metadata,
-            )
-            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
-            return result, audio_signal, None
-
         scaled_features = extract_features(
             audio=audio_signal,
             config=self.config.features,
-            scaler=self._scaler,
+            scaler=bundle.scaler,
         )
 
-        # Step 4: Primary Autoencoder Anomaly Scoring
-        rec_score = self._detector.predict_recording_score(scaled_features)
-        seg_scores = self._detector.predict_segment_scores(scaled_features)
-        is_anomaly = bool(rec_score >= self._detector.threshold)
+        # Step 4: Machine-Specific Autoencoder Anomaly Scoring
+        assert bundle.detector is not None
+        assert bundle.familiarity is not None
+        assert bundle.detector.threshold is not None
+
+        rec_score = bundle.detector.predict_recording_score(scaled_features)
+        seg_scores = bundle.detector.predict_segment_scores(scaled_features)
+        is_anomaly = bool(rec_score >= bundle.detector.threshold)
 
         model_prediction = ModelPrediction(
-            model_type="AcousticAutoencoder",
+            model_type=f"{m_type}-autoencoder-v1",
             anomaly_score=round(rec_score, 4),
-            threshold=round(self._detector.threshold, 4),
+            threshold=round(bundle.detector.threshold, 4),
             is_anomaly=is_anomaly,
-            aggregation_method=self._detector.config.score_aggregation,
+            aggregation_method=bundle.detector.config.score_aggregation,
             segment_scores=[round(float(s), 4) for s in seg_scores],
         )
 
         # Step 5: Latent Familiarity / Domain Shift Verification
-        latents = self._detector.extract_latent_embeddings(scaled_features)
-        familiarity_report = self._familiarity.predict(latents)
+        latents = bundle.detector.extract_latent_embeddings(scaled_features)
+        familiarity_report = bundle.familiarity.predict(latents)
 
         # Step 6: 4-State Industrial Decision Policy & Explanation
         result = evaluate_decision_policy(
@@ -317,7 +333,7 @@ class PulseForgeService:
             model_prediction=model_prediction,
             familiarity=familiarity_report,
             machine_id=machine_id,
-            machine_type=machine_type,
+            machine_type=m_type,
             metadata=schema_metadata,
         )
 
