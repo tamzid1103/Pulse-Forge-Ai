@@ -76,7 +76,7 @@ class TestProjectStructure:
         assert cfg.audio.sample_rate == 16_000
         assert cfg.audio.max_upload_bytes == 25 * 1024 * 1024
         assert cfg.features.n_mels == 128
-        assert cfg.supported_machine_types == ("fan",)
+        assert cfg.supported_machine_types == ("fan", "pump", "valve", "slider")
 
     def test_models_package_importable(self) -> None:
         import src.models

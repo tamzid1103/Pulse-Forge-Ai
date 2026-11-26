@@ -25,7 +25,7 @@ CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS analysis_runs (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
-    machine_type TEXT NOT NULL CHECK (machine_type = 'fan'),
+    machine_type TEXT NOT NULL CHECK (machine_type IN ('fan', 'pump', 'valve', 'slider')),
     machine_id TEXT NOT NULL,
     input_label TEXT,
     source_kind TEXT NOT NULL CHECK (source_kind IN ('uploaded', 'demo_sample', 'synthetic')),
@@ -81,14 +81,27 @@ class AnalysisStore:
         return conn
 
     def _init_db(self) -> None:
-        """Initialize database tables, concurrency pragmas, and indexes."""
+        """Initialize database tables, concurrency pragmas, migrations, and indexes."""
         with self._get_connection() as conn:
             if str(self.db_path) != ":memory:":
                 conn.execute("PRAGMA journal_mode=WAL;")
                 conn.execute("PRAGMA synchronous=NORMAL;")
                 conn.execute("PRAGMA busy_timeout=30000;")
-            conn.executescript(CREATE_TABLE_SQL)
-            conn.commit()
+
+            # Migrate legacy M6 'fan'-only CHECK constraint non-destructively
+            row = conn.execute(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='analysis_runs'"
+            ).fetchone()
+            if row and row[0] and "machine_type = 'fan'" in row[0]:
+                logger.info("Migrating analysis_runs table CHECK constraint for multi-machine support...")
+                conn.execute("ALTER TABLE analysis_runs RENAME TO analysis_runs_legacy_m6;")
+                conn.executescript(CREATE_TABLE_SQL)
+                conn.execute("INSERT INTO analysis_runs SELECT * FROM analysis_runs_legacy_m6;")
+                conn.execute("DROP TABLE analysis_runs_legacy_m6;")
+                conn.commit()
+            else:
+                conn.executescript(CREATE_TABLE_SQL)
+                conn.commit()
 
     def save_analysis(
         self,

@@ -226,9 +226,49 @@ class AppConfig:
     decision: DecisionConfig = field(default_factory=DecisionConfig)
     paths: PathConfig = field(default_factory=PathConfig)
 
-    # Machine type — fan only in MVP
-    supported_machine_types: tuple[str, ...] = ("fan",)
+    # Multi-machine industrial fleet support (Milestone M12)
+    supported_machine_types: tuple[str, ...] = ("fan", "pump", "valve", "slider")
     default_machine_type: str = "fan"
+
+
+MACHINE_FAMILY_METADATA: dict[str, dict[str, str]] = {
+    "fan": {
+        "display_name": "Industrial Centrifugal Fan",
+        "short_name": "Centrifugal Fan",
+        "default_machine_id": "id_00",
+        "default_asset_label": "fan_id_00",
+        "iso_class": "ISO 10816-3 Group 2 (Medium Rotating)",
+        "inspection_focus": "impeller balance, drive-end bearings, and belt tension",
+        "dataset_archive": "6_dB_fan.zip",
+    },
+    "pump": {
+        "display_name": "Centrifugal Water Pump",
+        "short_name": "Centrifugal Pump",
+        "default_machine_id": "id_00",
+        "default_asset_label": "pump_id_00",
+        "iso_class": "ISO 10816-3 Group 2 (Fluid Pumps)",
+        "inspection_focus": "impeller cavitation, mechanical seal integrity, and shaft bearings",
+        "dataset_archive": "6_dB_pump.zip",
+    },
+    "valve": {
+        "display_name": "Industrial Solenoid / Control Valve",
+        "short_name": "Control Valve",
+        "default_machine_id": "id_00",
+        "default_asset_label": "valve_id_00",
+        "iso_class": "IEC 60534 / ISO 10816 Valve Actuation",
+        "inspection_focus": "valve seat leakage, stem sticking, and solenoid chatter",
+        "dataset_archive": "6_dB_valve.zip",
+    },
+    "slider": {
+        "display_name": "Linear Slide Rail Actuator",
+        "short_name": "Slide Rail",
+        "default_machine_id": "id_00",
+        "default_asset_label": "slider_id_00",
+        "iso_class": "ISO 10816 Linear Motion Assembly",
+        "inspection_focus": "linear ball-screw pitting, carriage alignment, and rail lubrication",
+        "dataset_archive": "6_dB_slider.zip",
+    },
+}
 
 
 # ---------------------------------------------------------------------------

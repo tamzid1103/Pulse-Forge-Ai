@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from src.config import MACHINE_FAMILY_METADATA
 from src.schemas import (
     AnalysisResult,
     AudioMetadata,
@@ -176,6 +177,10 @@ def evaluate_decision_policy(
         )
 
     # 4. Anomaly Decision Paths
+    meta = MACHINE_FAMILY_METADATA.get(machine_type.lower(), {})
+    machine_label = meta.get("short_name", machine_type.capitalize())
+    focus = meta.get("inspection_focus", "mechanical bearings and rotating assemblies")
+
     if model_prediction.is_anomaly:
         return AnalysisResult(
             status=DecisionStatus.POSSIBLE_ANOMALY,
@@ -184,11 +189,11 @@ def evaluate_decision_policy(
             model_prediction=model_prediction,
             familiarity=familiarity,
             explanation=(
-                f"Unusual acoustic pattern detected. Recording anomaly score "
+                f"Unusual acoustic pattern detected on {machine_label}. Recording anomaly score "
                 f"({model_prediction.anomaly_score:.4f}) exceeds the calibrated baseline threshold "
                 f"({model_prediction.threshold:.4f})."
             ),
-            recommended_action="Please inspect the machine and verify the recording.",
+            recommended_action=f"Please inspect the machine ({focus}) and verify the recording.",
             machine_id=machine_id,
             machine_type=machine_type,
             metadata=metadata,
@@ -201,7 +206,7 @@ def evaluate_decision_policy(
             model_prediction=model_prediction,
             familiarity=familiarity,
             explanation=(
-                f"Acoustic pattern matches normal baseline operating parameters. "
+                f"Acoustic pattern on {machine_label} matches normal baseline operating parameters. "
                 f"Anomaly score ({model_prediction.anomaly_score:.4f}) is below the threshold "
                 f"({model_prediction.threshold:.4f})."
             ),
