@@ -141,6 +141,56 @@ html, body, [data-testid="stAppViewContainer"] {
     font-size: 0.78rem !important;
 }
 
+/* FIX: Sidebar Selectbox (Prevent faint grey text on white background) */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] label,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] label * {
+    color: #CBD5E1 !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    background-color: #0E1A2B !important;
+    border: 1px solid #294060 !important;
+    border-radius: 6px !important;
+    color: #F8FAFC !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+    border-color: #14B8A6 !important;
+    box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.35) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] span,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] div,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] input {
+    color: #F8FAFC !important;
+    -webkit-text-fill-color: #F8FAFC !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] svg {
+    fill: #F8FAFC !important;
+    color: #F8FAFC !important;
+}
+
+/* Selectbox dropdown menu popover (high-contrast dark text on crisp white) */
+div[data-baseweb="popover"] [role="listbox"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+div[data-baseweb="popover"] [role="option"] {
+    color: #0F172A !important;
+}
+
+div[data-baseweb="popover"] [role="option"]:hover,
+div[data-baseweb="popover"] [aria-selected="true"] {
+    background-color: #F0FDFA !important;
+    color: #0F766E !important;
+    font-weight: 600 !important;
+}
+
 [data-testid="stSidebar"] code {
     background-color: #0E1A2B !important;
     color: #5EEAD4 !important;

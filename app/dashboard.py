@@ -125,14 +125,35 @@ with st.sidebar:
     )
     st.divider()
 
-    # 2b. Multi-Machine Fleet Family Selector (Milestone M12)
+    # 2b. Multi-Machine Fleet Family Selector (Milestone M12, synced with Studio selector)
     machine_options = list(config.supported_machine_types)
+    if (
+        "active_machine_type" not in st.session_state
+        or st.session_state["active_machine_type"] not in machine_options
+    ):
+        st.session_state["active_machine_type"] = (
+            config.default_machine_type
+            if config.default_machine_type in machine_options
+            else machine_options[0]
+        )
+
+    def _on_sidebar_machine_change() -> None:
+        chosen = st.session_state.get("selected_machine_type_box")
+        if chosen in machine_options:
+            st.session_state["active_machine_type"] = chosen
+
+    def _on_studio_machine_change() -> None:
+        chosen = st.session_state.get("studio_machine_selector")
+        if chosen in machine_options:
+            st.session_state["active_machine_type"] = chosen
+
+    st.session_state["selected_machine_type_box"] = st.session_state["active_machine_type"]
     selected_machine_type = st.selectbox(
         "Equipment Family",
         options=machine_options,
-        index=0,
         format_func=lambda mt: MACHINE_FAMILY_METADATA.get(mt, {}).get("short_name", mt.title()),
         key="selected_machine_type_box",
+        on_change=_on_sidebar_machine_change,
     )
     active_meta = MACHINE_FAMILY_METADATA.get(selected_machine_type, {})
     active_bundle = service.registry.get_bundle(selected_machine_type)
@@ -286,6 +307,28 @@ if selected_view == "Acoustic Diagnostic Studio":
         badge_label=f"Target: {selected_machine_type}_id_00",
     )
 
+    # Prominent Equipment Family Switcher (mirrored and synchronized with Sidebar)
+    st.session_state["studio_machine_selector"] = st.session_state["active_machine_type"]
+    with st.container(border=True):
+        eq_col_left, eq_col_right = st.columns([3, 2], vertical_alignment="center")
+        with eq_col_left:
+            st.markdown("**Equipment Family**")
+            st.segmented_control(
+                "Equipment Family",
+                options=machine_options,
+                format_func=lambda mt: MACHINE_FAMILY_METADATA.get(mt, {}).get("short_name", mt.title()),
+                key="studio_machine_selector",
+                on_change=_on_studio_machine_change,
+                label_visibility="collapsed",
+                width="stretch",
+            )
+        with eq_col_right:
+            st.caption(
+                f"**Active Model:** `{active_meta.get('display_name', selected_machine_type.title())}`  \n"
+                f"**Inspection Focus:** {active_meta.get('inspection_focus', 'acoustic anomaly detection')}  \n"
+                f"**Calibrated AE Threshold:** `{ae_thresh:.4f}` | **Familiarity Limit:** `{fam_thresh:.4f}`"
+            )
+
     demo_dir = config.paths.project_root / "demo_audio"
 
     # Initialize session state keys for reliable state management
@@ -390,9 +433,9 @@ if selected_view == "Acoustic Diagnostic Studio":
             else:
                 st.error(f"Demo file not found on disk: {demo_file_path}")
 
-    # Synchronize state when input changes
+    # Synchronize state when input or machine family changes
     if selected_bytes is not None:
-        input_hash = hashlib.sha256(selected_bytes).hexdigest()[:16]
+        input_hash = f"{selected_machine_type}:{hashlib.sha256(selected_bytes).hexdigest()[:16]}"
         if st.session_state["active_audio_id"] != input_hash:
             st.session_state["active_audio_bytes"] = selected_bytes
             st.session_state["active_audio_filename"] = selected_filename
@@ -796,10 +839,11 @@ if selected_view == "Acoustic Diagnostic Studio":
                 )
 
         with c_tab2:
+            short_machine_label = active_meta.get("short_name", selected_machine_type).lower()
             st.markdown(
-                """
+                f"""
                 <div style="font-size: 0.82rem; color: #64748B; margin-bottom: 0.5rem;">
-                    Ask questions regarding acoustic fault signatures, ISO 10816 severity thresholds, or fan lubrication SOPs.
+                    Ask questions regarding acoustic fault signatures, ISO 10816 severity thresholds, or {short_machine_label} maintenance SOPs.
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -809,11 +853,11 @@ if selected_view == "Acoustic Diagnostic Studio":
             col_p1, col_p2, col_p3 = st.columns(3)
             prompt_to_send = None
             with col_p1:
-                if st.button("🔍 Why this status?", key="chip_why_status", use_container_width=True):
-                    prompt_to_send = f"Explain in technical terms why status '{result.status.value}' was assigned to this fan recording."
+                if st.button("🔍 Why this status?", key="chip_why_status", width="stretch"):
+                    prompt_to_send = f"Explain in technical terms why status '{result.status.value}' was assigned to this {short_machine_label} recording."
             with col_p2:
-                if st.button("🛠️ Bearing inspection protocol", key="chip_bearing", use_container_width=True):
-                    prompt_to_send = "What specific physical inspection steps and tools are required to verify the bearing condition?"
+                if st.button("🛠️ Physical inspection protocol", key="chip_bearing", width="stretch"):
+                    prompt_to_send = f"What specific physical inspection steps and tools are required to verify the {short_machine_label} condition ({active_meta.get('inspection_focus', 'component integrity')})?"
             with col_p3:
                 if st.button("📊 ISO 10816 correlation", key="chip_iso", width="stretch"):
                     prompt_to_send = "How does this acoustic anomaly reconstruction error correlate with ISO 10816 vibration severity zones?"
