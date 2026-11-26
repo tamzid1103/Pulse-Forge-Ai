@@ -23,6 +23,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from src.config import MACHINE_FAMILY_METADATA
 from src.schemas import AnalysisResult, DecisionStatus
 
 logger = logging.getLogger("pulseforge.copilot")
@@ -195,10 +196,13 @@ class IndustrialCopilot:
         rms = result.quality.rms_level
         clipping_pct = result.quality.clipping_ratio * 100
         duration = result.quality.duration_seconds
+        m_type = (result.machine_type or "fan").lower()
+        m_meta = MACHINE_FAMILY_METADATA.get(m_type, {})
+        m_display = m_meta.get("display_name", f"Industrial {m_type.capitalize()}")
 
         context = f"""
 TARGET EQUIPMENT TELEMETRY:
-- Equipment Asset: Industrial Centrifugal Fan ({machine_id})
+- Equipment Asset: {m_display} ({machine_id}, type={m_type})
 - Diagnostic Status: {status_str}
 - Autoencoder Reconstruction Error (MSE): {ae_score:.6f}
 - Autoencoder Baseline Threshold: {ae_thresh:.6f}
@@ -410,11 +414,16 @@ RULES FOR YOUR RESPONSES:
     ) -> dict[str, Any]:
         """
         Deterministic, rule-based industrial work order generator matching exact SOP.
+        Supports fan, pump, valve, and slider machinery families.
         Used when offline or no API key is provided.
         """
+        m_type = (result.machine_type or "fan").lower().strip()
+        prefix_map = {"fan": "FAN", "pump": "PUMP", "valve": "VALVE", "slider": "SLDR"}
+        wo_prefix = prefix_map.get(m_type, m_type.upper()[:5])
+
         now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        hash_suffix = abs(hash(now_str + machine_id)) % 9000 + 1000
-        wo_id = f"WO-FAN-2026-{hash_suffix}"
+        hash_suffix = abs(hash(now_str + machine_id + m_type)) % 9000 + 1000
+        wo_id = f"WO-{wo_prefix}-2026-{hash_suffix}"
 
         status = result.status
 
@@ -422,22 +431,25 @@ RULES FOR YOUR RESPONSES:
             return {
                 "work_order_id": wo_id,
                 "asset_id": machine_id,
+                "machine_type": m_type,
                 "diagnostic_status": "normal",
                 "urgency": "ROUTINE",
-                "suspected_mechanism": "Nominal dynamic balance; hydrodynamic bearing lubrication intact",
+                "suspected_mechanism": (
+                    f"Nominal dynamic balance on {m_type}; lubrication and structural acoustic signature intact"
+                ),
                 "iso_severity_zone": "Zone A / Zone B (Unrestricted Long-Term Operation)",
                 "recommended_steps": [
                     "Maintain continuous automated acoustic monitoring at 4-hour intervals.",
-                    "Verify bearing lubrication interval in computerized maintenance management system (CMMS).",
-                    "Conduct standard visual inspection of fan belt drive at next scheduled outage.",
+                    f"Verify preventive lubrication and seal schedule for {m_type} in CMMS.",
+                    "Conduct routine visual and acoustic inspection at next planned maintenance window.",
                 ],
                 "safety_checklist": [
-                    "Standard PPE compliance in fan plenum room.",
-                    "Ensure safety guards remain bolted in place over V-belt drive.",
+                    "Standard PPE compliance in plant operations zone.",
+                    "Ensure fixed machine guards and covers remain securely fastened.",
                 ],
                 "required_tools": [
                     "Industrial acoustic stethoscope / shotgun microphone",
-                    "Handheld tachometer (stroboscopic)",
+                    "Handheld tachometer or IR pyrometer",
                 ],
                 "required_ppe": [
                     "ANSI Z87.1 approved safety glasses",
@@ -446,42 +458,113 @@ RULES FOR YOUR RESPONSES:
                 ],
                 "engineering_summary": (
                     f"Acoustic reconstruction error ({result.model_prediction.anomaly_score:.4f} MSE if available) "
-                    "remains comfortably below the validation threshold. No anomalous transient frequencies detected."
+                    f"for {m_type} ({machine_id}) remains comfortably below the validation threshold. "
+                    "No anomalous transient frequencies detected."
                 ),
                 "ai_engine": "Deterministic Industrial SOP Engine (Offline)",
                 "created_at": now_str,
             }
 
         elif status == DecisionStatus.POSSIBLE_ANOMALY:
-            return {
-                "work_order_id": wo_id,
-                "asset_id": machine_id,
-                "diagnostic_status": "possible_anomaly",
-                "urgency": "PRIORITY_INSPECTION",
-                "suspected_mechanism": (
-                    "Early-stage bearing raceway spalling, ball cage fatigue, or excessive V-belt slippage"
+            anomaly_profiles = {
+                "pump": (
+                    "Impeller cavitation, mechanical seal face wear, or shaft bearing raceway distress",
+                    [
+                        "Verify pump suction strainer differential pressure and check for air entrainment / cavitation.",
+                        "Inspect mechanical seal gland for weeping and measure seal housing temperature (< 80°C).",
+                        "Perform high-frequency vibration sweep (10 Hz - 10 kHz) on pump & motor bearings.",
+                        "Verify motor-pump coupling alignment tolerances.",
+                    ],
+                    [
+                        "Lockout/Tagout (LOTO) 480V pump motor breaker at MCC panel before opening guards.",
+                        "Close and tag suction and discharge isolation valves; bleed casing pressure safely.",
+                        "Verify 0 RPM shaft standstill prior to seal or coupling access.",
+                    ],
+                    [
+                        "Handheld ISO 10816 vibration pen",
+                        "Fluke 62 Max+ Infrared Thermometer",
+                        "Suction/Discharge differential pressure gauge",
+                        "Laser shaft alignment kit",
+                    ],
                 ),
-                "iso_severity_zone": "Zone C (Restricted Operation / Maintenance Required within 48h)",
-                "recommended_steps": [
+                "valve": (
+                    "Internal valve seat wire-drawing leak, stem packing friction, or solenoid chatter",
+                    [
+                        "Check upstream/downstream process pressure gauge to assess internal seat bypass leakage.",
+                        "Inspect valve stem packing gland and actuator linkage for mechanical sticking.",
+                        "Test solenoid coil current draw and inspect pneumatic actuator air supply pressure.",
+                        "Inspect valve seat elastomer/trim for erosion if leak persists after recalibration.",
+                    ],
+                    [
+                        "Lockout/Tagout (LOTO) both electrical solenoid supply (24V/120V) and pneumatic supply air.",
+                        "Depressurize and isolate upstream/downstream process piping before valve disassembly.",
+                        "Verify zero stored spring or pneumatic actuator energy.",
+                    ],
+                    [
+                        "Ultrasonic acoustic leak detector",
+                        "Digital multimeter (loop/coil continuity)",
+                        "Calibrated pneumatic regulator & test gauge",
+                        "OEM stem packing torque wrench",
+                    ],
+                ),
+                "slider": (
+                    "Ball-screw pitting, linear carriage bearing spalling, or guide rail lubrication starvation",
+                    [
+                        "Inspect hardened linear guide rails and ball-screw nut for scoring or particulate debris.",
+                        "Measure carriage backlash and rail parallelism across full traverse stroke.",
+                        "Check drive belt/coupling tension and stepper/servo motor holding torque.",
+                        "Purge and replenish NLGI Grade 2 lithium-complex grease on runner blocks.",
+                    ],
+                    [
+                        "Lockout/Tagout (LOTO) servo/stepper motion drive power at control cabinet.",
+                        "Engage mechanical Z-axis/carriage safety block to prevent gravity or spring drift.",
+                        "Confirm zero stored kinetic motion before clearing enclosure interlocks.",
+                    ],
+                    [
+                        "Dial test indicator with magnetic base",
+                        "NLGI Grade 2 grease gun with precision nozzle",
+                        "Feeler gauges & precision straightedge",
+                        "IR thermal camera (scan bearing temperature)",
+                    ],
+                ),
+            }
+
+            default_fan = (
+                "Early-stage bearing raceway spalling, ball cage fatigue, or excessive V-belt slippage",
+                [
                     "Dispatch mechanical technician to perform physical bearing housing inspection within 24-48 hours.",
                     "Measure bearing surface temperature using infrared thermometer (target: < 75°C).",
                     "Perform high-frequency vibration sweep (10 Hz - 10 kHz) on inboard and outboard bearing pillows.",
                     "Inspect V-belt tension using digital belt tension meter; inspect pulleys for misalignment.",
                     "Inspect impeller blades for dust accumulation, particulate erosion, or foreign object damage.",
                 ],
-                "safety_checklist": [
+                [
                     "Lockout/Tagout (LOTO) 480V motor disconnect at MCC panel before opening inspection hatch.",
                     "Attach safety padlock and dated warning tag; verify zero electrical potential.",
                     "Visually confirm fan impeller has achieved 0 RPM full standstill through sight glass.",
                     "Discharge residual static electricity before touching rotating assembly.",
                 ],
-                "required_tools": [
+                [
                     "Handheld ISO 10816 vibration pen / accelerometer",
                     "Fluke 62 Max+ Infrared Thermometer",
                     "Digital V-belt tension tester",
                     "Grease gun with NLGI Grade 2 Polyurea synthetic grease",
                     "Dial indicator with magnetic base (shaft runout check)",
                 ],
+            )
+            mechanism, steps, safety, tools = anomaly_profiles.get(m_type, default_fan)
+
+            return {
+                "work_order_id": wo_id,
+                "asset_id": machine_id,
+                "machine_type": m_type,
+                "diagnostic_status": "possible_anomaly",
+                "urgency": "PRIORITY_INSPECTION",
+                "suspected_mechanism": mechanism,
+                "iso_severity_zone": "Zone C (Restricted Operation / Maintenance Required within 48h)",
+                "recommended_steps": steps,
+                "safety_checklist": safety,
+                "required_tools": tools,
                 "required_ppe": [
                     "ANSI Z87.1 safety glasses with side shields",
                     "Class 2 hearing protection (earmuffs + plugs)",
@@ -489,9 +572,9 @@ RULES FOR YOUR RESPONSES:
                     "Cut-resistant mechanical work gloves",
                 ],
                 "engineering_summary": (
-                    f"Acoustic reconstruction error exceeded operational threshold. "
+                    f"Acoustic reconstruction error on {m_type} ({machine_id}) exceeded operational threshold. "
                     "Latent familiarity confirms this is authentic machine noise with anomalous spectral signatures, "
-                    "suggesting localized mechanical friction or bearing micro-distress."
+                    "suggesting localized mechanical friction or component micro-distress."
                 ),
                 "ai_engine": "Deterministic Industrial SOP Engine (Offline)",
                 "created_at": now_str,
