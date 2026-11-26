@@ -52,7 +52,7 @@ from app.ui_components import (
 
 # Backwards-compatible alias for testing
 plot_acoustic_features = render_acoustic_plots
-from src.config import AppConfig
+from src.config import AppConfig, MACHINE_FAMILY_METADATA
 from src.copilot import IndustrialCopilot
 from src.decision import DecisionStatus
 from src.persistence import AnalysisStore
@@ -125,18 +125,38 @@ with st.sidebar:
     )
     st.divider()
 
+    # 2b. Multi-Machine Fleet Family Selector (Milestone M12)
+    machine_options = list(config.supported_machine_types)
+    selected_machine_type = st.selectbox(
+        "Equipment Family",
+        options=machine_options,
+        index=0,
+        format_func=lambda mt: MACHINE_FAMILY_METADATA.get(mt, {}).get("short_name", mt.title()),
+        key="selected_machine_type_box",
+    )
+    active_meta = MACHINE_FAMILY_METADATA.get(selected_machine_type, {})
+    active_bundle = service.registry.get_bundle(selected_machine_type)
+
     # 3. Monitored equipment context (compact label/value pairs, monospace ID)
     render_sidebar_equipment(
-        asset="Industrial Centrifugal Fan",
-        equipment_id="fan_id_00",
-        facility="Plant Alpha — Line 1",
+        asset=active_meta.get("display_name", f"Industrial {selected_machine_type.title()}"),
+        equipment_id=active_meta.get("default_asset_label", f"{selected_machine_type}_id_00"),
+        facility="Plant Alpha — Multi-Line",
         sensor="16 kHz / 16-bit PCM",
     )
     st.divider()
 
     # 4. ML Engine Specifications (Real thresholds from validation calibration)
-    ae_thresh = service.detector.threshold if service.detector else 0.8904
-    fam_thresh = service.familiarity.threshold if service.familiarity else 9.2549
+    ae_thresh = (
+        active_bundle.detector.threshold
+        if active_bundle and active_bundle.detector and active_bundle.detector.threshold is not None
+        else 0.8904
+    )
+    fam_thresh = (
+        active_bundle.familiarity.threshold
+        if active_bundle and active_bundle.familiarity and active_bundle.familiarity.threshold is not None
+        else 9.2549
+    )
 
     st.markdown(
         """
@@ -262,8 +282,8 @@ with st.sidebar:
 if selected_view == "Acoustic Diagnostic Studio":
     render_page_header(
         title="Acoustic Diagnostic Studio",
-        subtitle="Analyze machine recordings and inspect acoustic fault signatures.",
-        badge_label="Target: fan_id_00",
+        subtitle=f"Analyze {active_meta.get('short_name', selected_machine_type).lower()} recordings and inspect acoustic fault signatures.",
+        badge_label=f"Target: {selected_machine_type}_id_00",
     )
 
     demo_dir = config.paths.project_root / "demo_audio"
@@ -324,19 +344,43 @@ if selected_view == "Acoustic Diagnostic Studio":
                 "Test pre-calibrated baseline and fault recordings from the MIMII industrial dataset:"
             )
 
-            DEMO_CHOICES = {
-                "Scenario 1: Normal baseline fan (nominal continuous load)": "01_normal_fan.wav",
-                "Scenario 2: Bearing rattle anomaly (harmonic degradation fault)": "02_bearing_anomaly.wav",
-                "Scenario 3: Silent sensor failure (disconnected microphone, RMS < 0.001)": "03_silent_sensor_failure.wav",
-                "Scenario 4: Clipped sensor saturation (severe ADC gain overflow)": "04_clipped_sensor_saturation.wav",
-                "Scenario 5: Unfamiliar acoustic noise (out-of-distribution background shift)": "05_unfamiliar_operating_noise.wav",
+            DEMO_CATALOG_BY_MACHINE = {
+                "fan": {
+                    "Scenario 1: Normal baseline fan (nominal continuous load)": "01_normal_fan.wav",
+                    "Scenario 2: Bearing rattle anomaly (harmonic degradation fault)": "02_bearing_anomaly.wav",
+                    "Scenario 3: Silent sensor failure (disconnected microphone, RMS < 0.001)": "03_silent_sensor_failure.wav",
+                    "Scenario 4: Clipped sensor saturation (severe ADC gain overflow)": "04_clipped_sensor_saturation.wav",
+                    "Scenario 5: Unfamiliar acoustic noise (out-of-distribution background shift)": "05_unfamiliar_operating_noise.wav",
+                },
+                "pump": {
+                    "Scenario 1: Centrifugal Pump normal (healthy steady flow)": "06_pump_normal.wav",
+                    "Scenario 2: Pump anomaly (impeller cavitation / mechanical seal defect)": "07_pump_anomaly.wav",
+                    "Scenario 3: Silent sensor failure (disconnected microphone, RMS < 0.001)": "03_silent_sensor_failure.wav",
+                    "Scenario 4: Clipped sensor saturation (severe ADC gain overflow)": "04_clipped_sensor_saturation.wav",
+                    "Scenario 5: Unfamiliar acoustic noise (out-of-distribution background shift)": "05_unfamiliar_operating_noise.wav",
+                },
+                "valve": {
+                    "Scenario 1: Control Valve normal (crisp nominal actuation)": "08_valve_normal.wav",
+                    "Scenario 2: Valve anomaly (internal seat leakage / solenoid chatter)": "09_valve_anomaly.wav",
+                    "Scenario 3: Silent sensor failure (disconnected microphone, RMS < 0.001)": "03_silent_sensor_failure.wav",
+                    "Scenario 4: Clipped sensor saturation (severe ADC gain overflow)": "04_clipped_sensor_saturation.wav",
+                    "Scenario 5: Unfamiliar acoustic noise (out-of-distribution background shift)": "05_unfamiliar_operating_noise.wav",
+                },
+                "slider": {
+                    "Scenario 1: Linear Slide Rail normal (smooth lubricated stroke)": "10_slider_normal.wav",
+                    "Scenario 2: Slide Rail anomaly (ball-screw pitting / lubrication defect)": "11_slider_anomaly.wav",
+                    "Scenario 3: Silent sensor failure (disconnected microphone, RMS < 0.001)": "03_silent_sensor_failure.wav",
+                    "Scenario 4: Clipped sensor saturation (severe ADC gain overflow)": "04_clipped_sensor_saturation.wav",
+                    "Scenario 5: Unfamiliar acoustic noise (out-of-distribution background shift)": "05_unfamiliar_operating_noise.wav",
+                },
             }
+            DEMO_CHOICES = DEMO_CATALOG_BY_MACHINE.get(selected_machine_type, DEMO_CATALOG_BY_MACHINE["fan"])
 
             demo_selection = st.radio(
                 "Choose Demo Scenario:",
                 options=list(DEMO_CHOICES.keys()),
                 index=0,
-                key="demo_scenario_radio",
+                key=f"demo_scenario_radio_{selected_machine_type}",
             )
             selected_filename = DEMO_CHOICES[demo_selection]
             demo_file_path = demo_dir / selected_filename
@@ -435,6 +479,8 @@ if selected_view == "Acoustic Diagnostic Studio":
                     res, sig, rid = service.analyze_bytes(
                         active_bytes,
                         filename=active_name,
+                        machine_id="id_00",
+                        machine_type=selected_machine_type,
                         source_kind=active_source or "uploaded",
                         record_to_db=True,
                     )
@@ -662,7 +708,7 @@ if selected_view == "Acoustic Diagnostic Studio":
                     "⚡ Generate / Refresh Work Order",
                     key="btn_generate_work_order",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                 )
             with col_stat:
                 if effective_groq_key:
@@ -769,7 +815,7 @@ if selected_view == "Acoustic Diagnostic Studio":
                 if st.button("🛠️ Bearing inspection protocol", key="chip_bearing", use_container_width=True):
                     prompt_to_send = "What specific physical inspection steps and tools are required to verify the bearing condition?"
             with col_p3:
-                if st.button("📊 ISO 10816 correlation", key="chip_iso", use_container_width=True):
+                if st.button("📊 ISO 10816 correlation", key="chip_iso", width="stretch"):
                     prompt_to_send = "How does this acoustic anomaly reconstruction error correlate with ISO 10816 vibration severity zones?"
 
             chat_history_key = f"chat_history_{cached['id']}"
@@ -830,8 +876,8 @@ elif selected_view == "Plant Fleet Overview":
             """
             <div class="metric-tile">
                 <div class="metric-tile-label">Monitored Assets</div>
-                <div class="metric-tile-val">4 Fans</div>
-                <div class="metric-tile-sub">Centrifugal and axial ventilation</div>
+                <div class="metric-tile-val">4 Families</div>
+                <div class="metric-tile-sub">Fan, Pump, Valve & Slide Rail</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -872,7 +918,13 @@ elif selected_view == "Plant Fleet Overview":
             unsafe_allow_html=True,
         )
 
-    st.markdown("#### Production Line Machine Registry")
+    st.markdown("#### Multi-Machine Production Line Registry")
+
+    reg_summary = service.registry.get_status_summary()
+    fan_thr = reg_summary.get("fan", {}).get("autoencoder_threshold") or ae_thresh
+    pump_thr = reg_summary.get("pump", {}).get("autoencoder_threshold") or 1.0363
+    valve_thr = reg_summary.get("valve", {}).get("autoencoder_threshold") or 0.4216
+    slider_thr = reg_summary.get("slider", {}).get("autoencoder_threshold") or 0.8008
 
     fleet_units = [
         {
@@ -882,42 +934,42 @@ elif selected_view == "Plant Fleet Overview":
             "Status": "NORMAL",
             "BadgeClass": "badge-normal",
             "Score": "0.5245",
-            "Threshold": f"{ae_thresh:.4f}",
+            "Threshold": f"{fan_thr:.4f}",
             "Notes": "Baseline acoustic signature verified within nominal tolerances.",
             "Action": "Routine scheduled inspection.",
         },
         {
-            "Line": "Line 2 — Cooling Tower",
-            "Asset": "Axial Draught Fan",
-            "ID": "fan_id_02",
+            "Line": "Line 2 — Process Coolant Loop",
+            "Asset": "Centrifugal Water Pump",
+            "ID": "pump_id_00",
+            "Status": "NORMAL",
+            "BadgeClass": "badge-normal",
+            "Score": "0.6180",
+            "Threshold": f"{pump_thr:.4f}",
+            "Notes": "Steady laminar flow confirmed; zero cavitation or mechanical seal hiss.",
+            "Action": "Maintain routine seal & NPSHa check.",
+        },
+        {
+            "Line": "Line 3 — Steam Isolation Manifold",
+            "Asset": "Industrial Control Valve",
+            "ID": "valve_id_00",
             "Status": "NEEDS REVIEW",
             "BadgeClass": "badge-review",
-            "Score": "0.8410",
-            "Threshold": f"{ae_thresh:.4f}",
-            "Notes": "Acoustic sensor telemetry indicates potential clipping or gain saturation.",
-            "Action": "Verify acoustic sensor wiring and preamplifier gain settings.",
+            "Score": "0.3910",
+            "Threshold": f"{valve_thr:.4f}",
+            "Notes": "Transient ambient compressor noise detected near valve station.",
+            "Action": "Verify solenoid wiring and background ambient shift.",
         },
         {
-            "Line": "Line 3 — Kiln Exhaust",
-            "Asset": "Heavy Duty Centrifugal Blower",
-            "ID": "fan_id_04",
+            "Line": "Line 4 — Assembly Actuator Cell",
+            "Asset": "Linear Slide Rail Actuator",
+            "ID": "slider_id_00",
             "Status": "POSSIBLE ANOMALY",
             "BadgeClass": "badge-anomaly",
-            "Score": "1.2245",
-            "Threshold": f"{ae_thresh:.4f}",
-            "Notes": "Harmonic acoustic signature divergence indicates potential bearing raceway degradation.",
-            "Action": "Schedule physical bearing inspection and lubrication check within 24 hours.",
-        },
-        {
-            "Line": "Line 4 — Fresh Air Supply",
-            "Asset": "Centrifugal Intake Fan",
-            "ID": "fan_id_06",
-            "Status": "STANDBY",
-            "BadgeClass": "badge-invalid",
-            "Score": "N/A",
-            "Threshold": f"{ae_thresh:.4f}",
-            "Notes": "Unit currently idle. Ready for automatic demand switchover.",
-            "Action": "No action required.",
+            "Score": "1.1840",
+            "Threshold": f"{slider_thr:.4f}",
+            "Notes": "High-frequency ball-screw impact impulses indicate possible pitting or lubrication loss.",
+            "Action": "Schedule LOTO carriage inspection and NLGI 2 re-greasing.",
         },
     ]
 
@@ -994,6 +1046,38 @@ elif selected_view == "Model Benchmarks & Validation":
         },
     ])
     st.dataframe(benchmarks_df, width="stretch", hide_index=True)
+
+    multi_summary_path = config.paths.results_dir / "multi_machine_summary.json"
+    if multi_summary_path.is_file():
+        st.markdown("#### Multi-Machine Fleet Autoencoder Benchmarks (M12)")
+        st.caption("Per-machine PyTorch Autoencoder models trained on authentic MIMII 6 dB SNR subsets (`id_00`):")
+        try:
+            multi_data = json.loads(multi_summary_path.read_text(encoding="utf-8"))
+            fleet_rows = [
+                {
+                    "Machine Family": "Centrifugal Fan (fan)",
+                    "AE Threshold": "0.8904",
+                    "Familiarity Limit": "9.2549",
+                    "Test AUROC": "0.9375",
+                    "Test Recall": "1.0000",
+                    "Test F1": "0.9333",
+                }
+            ]
+            for m_key in ("pump", "valve", "slider"):
+                if m_key in multi_data:
+                    entry = multi_data[m_key]
+                    tm = entry.get("test_metrics", {})
+                    fleet_rows.append({
+                        "Machine Family": MACHINE_FAMILY_METADATA.get(m_key, {}).get("short_name", m_key.title()) + f" ({m_key})",
+                        "AE Threshold": f"{entry.get('ae_threshold', 0.0):.4f}",
+                        "Familiarity Limit": f"{entry.get('familiarity_threshold', 0.0):.4f}",
+                        "Test AUROC": f"{tm.get('auroc', 0.0):.4f}",
+                        "Test Recall": f"{tm.get('recall', 0.0):.4f}",
+                        "Test F1": f"{tm.get('f1_score', 0.0):.4f}",
+                    })
+            st.dataframe(pd.DataFrame(fleet_rows), width="stretch", hide_index=True)
+        except Exception as exc:
+            st.warning(f"Could not parse multi-machine benchmark summary: {exc}")
 
     st.markdown("#### Empirical Validation Visualizations")
 
@@ -1117,8 +1201,8 @@ elif selected_view == "System Architecture & ISO":
             - **Dataset Name:** MIMII Dataset (*Sound Dataset for Malfunctioning Industrial Machine Investigation and Inspection*)
             - **Authors:** Harsh Purohit, Ryo Tanabe, Kenji Nishida, Takashi Endo, Yuki Kawaguchi, Kaori Suefusa, Yohei Kawaguchi
             - **Institutions:** Hitachi, Ltd. Industrial AI Lab & IEEE DCASE Challenge
-            - **Target Machine:** Industrial Centrifugal Fan (`id_00`)
-            - **Acoustic Acquisition:** 8-microphone circular array mixed to single-channel 16 kHz telemetry under varying operational noise conditions.
+            - **Target Machine Families:** Industrial Centrifugal Fan (`fan/id_00`), Centrifugal Water Pump (`pump/id_00`), Solenoid/Control Valve (`valve/id_00`), and Linear Slide Rail (`slider/id_00`).
+            - **Acoustic Acquisition:** 8-microphone circular array mixed to single-channel 16 kHz telemetry under varying operational noise conditions (6 dB SNR).
             """
         )
 
