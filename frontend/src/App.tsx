@@ -5,7 +5,7 @@ import { LiveStreamStudio } from "./components/LiveStreamStudio";
 import { FleetHealthBoard } from "./components/FleetHealthBoard";
 import { AuditTrail } from "./components/AuditTrail";
 import { CopilotDrawer } from "./components/CopilotDrawer";
-import { AnalysisResult, DemoScenario } from "./types";
+import { AnalysisResult, DemoScenario, MachineType } from "./types";
 import {
   checkBackendHealth,
   evaluateScenario,
@@ -17,6 +17,7 @@ import {
 export function App() {
   const [activeTab, setActiveTab] = useState<"diagnostic" | "streaming" | "fleet" | "audit">("diagnostic");
   const [machineId, setMachineId] = useState<string>("fan_id_00");
+  const [machineType, setMachineType] = useState<MachineType>("fan");
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [latencyMs, setLatencyMs] = useState<number>(0);
   const [scenarios, setScenarios] = useState<DemoScenario[]>(FALLBACK_SCENARIOS);
@@ -32,12 +33,12 @@ export function App() {
       setBackendOnline(health.online);
       setLatencyMs(health.latencyMs);
 
-      const scs = await fetchDemoScenarios();
+      const scs = await fetchDemoScenarios("all");
       setScenarios(scs);
 
       // Auto-evaluate first scenario for immediate dashboard populated state
       try {
-        const res = await evaluateScenario("scenario_01");
+        const res = await evaluateScenario("scenario_01", "fan_id_00", "fan");
         setAnalysis(res.analysis);
       } catch (e) {
         console.error("Initial scenario evaluation failed:", e);
@@ -58,9 +59,13 @@ export function App() {
     setActiveScenarioId(scenarioId);
     setLoading(true);
     try {
-      const res = await evaluateScenario(scenarioId);
+      const matched = scenarios.find((s) => s.id === scenarioId);
+      const targetType: MachineType = matched?.machine_type || machineType;
+      const targetId = matched?.machine_id || `${targetType}_id_00`;
+      const res = await evaluateScenario(scenarioId, targetId, targetType);
       setAnalysis(res.analysis);
-      setMachineId(res.machine_id || "fan_id_00");
+      setMachineId(targetId);
+      setMachineType(targetType);
     } catch (e) {
       console.error("Scenario evaluation failed:", e);
     } finally {
@@ -71,7 +76,7 @@ export function App() {
   const handleUploadFile = async (file: File) => {
     setLoading(true);
     try {
-      const res = await uploadAudioAnalysis(file, machineId);
+      const res = await uploadAudioAnalysis(file, machineId, machineType);
       setAnalysis(res.analysis);
     } catch (e: any) {
       alert(e.message || "File upload failed.");
@@ -87,7 +92,11 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         machineId={machineId}
-        setMachineId={setMachineId}
+        machineType={machineType}
+        onSelectEquipment={(id, type) => {
+          setMachineId(id);
+          setMachineType(type);
+        }}
         backendOnline={backendOnline}
         latencyMs={latencyMs}
         onOpenCopilot={() => setCopilotOpen(true)}
@@ -99,6 +108,7 @@ export function App() {
           <DiagnosticStudio
             scenarios={scenarios}
             activeScenarioId={activeScenarioId}
+            machineType={machineType}
             onSelectScenario={handleSelectScenario}
             onUploadFile={handleUploadFile}
             analysis={analysis}
@@ -113,8 +123,9 @@ export function App() {
 
         {activeTab === "fleet" && (
           <FleetHealthBoard
-            onSelectMachine={(id) => {
+            onSelectMachine={(id, mType) => {
               setMachineId(id);
+              setMachineType(mType);
               setActiveTab("diagnostic");
             }}
           />

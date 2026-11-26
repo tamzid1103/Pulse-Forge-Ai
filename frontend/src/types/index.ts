@@ -4,6 +4,7 @@
  */
 
 export type DecisionStatus = "normal" | "possible_anomaly" | "needs_review" | "invalid_input";
+export type MachineType = "fan" | "pump" | "valve" | "slider";
 
 export interface QualityReport {
   passed: boolean;
@@ -64,9 +65,11 @@ export interface AnalysisResponse {
 export interface DemoScenario {
   id: string;
   filename: string;
-  name: string;
-  machine_id: string;
-  condition: string;
+  name?: string;
+  label?: string;
+  machine_id?: string;
+  machine_type?: MachineType;
+  condition?: string;
   description: string;
   expected_status: string;
   file_path: string;
@@ -140,6 +143,7 @@ export interface FleetMachine {
   id: string;
   name: string;
   type: string;
+  machineType: MachineType;
   ratedRpm: number;
   powerKw: number;
   vibrationZone: "Zone A" | "Zone B" | "Zone C" | "Zone D";

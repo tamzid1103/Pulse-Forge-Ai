@@ -9,11 +9,14 @@ import {
   WifiOff,
 } from "lucide-react";
 
+import { MachineType } from "../types";
+
 interface NavbarProps {
   activeTab: "diagnostic" | "streaming" | "fleet" | "audit";
   setActiveTab: (tab: "diagnostic" | "streaming" | "fleet" | "audit") => void;
   machineId: string;
-  setMachineId: (id: string) => void;
+  machineType: MachineType;
+  onSelectEquipment: (machineId: string, machineType: MachineType) => void;
   backendOnline: boolean;
   latencyMs: number;
   onOpenCopilot: () => void;
@@ -23,16 +26,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   machineId,
-  setMachineId,
+  machineType,
+  onSelectEquipment,
   backendOnline,
   latencyMs,
   onOpenCopilot,
 }) => {
-  const machines = [
-    { id: "fan_id_00", label: "Centrifugal Fan #00 (MIMII Primary)" },
-    { id: "fan_id_02", label: "Centrifugal Fan #02 (Line B)" },
-    { id: "fan_id_04", label: "Exhaust Blower #04 (Line C)" },
-    { id: "fan_id_06", label: "Cooling Fan #06 (Line D)" },
+  const machines: { id: string; type: MachineType; label: string }[] = [
+    { id: "fan_id_00", type: "fan", label: "Fan #00 — Centrifugal Fan (MIMII)" },
+    { id: "pump_id_00", type: "pump", label: "Pump #00 — Centrifugal Pump (MIMII)" },
+    { id: "valve_id_00", type: "valve", label: "Valve #00 — Control Valve (MIMII)" },
+    { id: "slider_id_00", type: "slider", label: "Slider #00 — Linear Slide Rail (MIMII)" },
   ];
 
   return (
@@ -124,12 +128,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center space-x-2.5 w-full md:w-auto justify-end">
           {/* Asset Select */}
           <select
-            value={machineId}
-            onChange={(e) => setMachineId(e.target.value)}
+            value={`${machineType}:${machineId}`}
+            onChange={(e) => {
+              const [mType, mId] = e.target.value.split(":");
+              onSelectEquipment(mId || "fan_id_00", (mType as MachineType) || "fan");
+            }}
             className="bg-industrial-card border border-industrial-border text-xs rounded-lg px-2.5 py-1.5 text-gray-200 focus:outline-none focus:border-emerald-500 font-mono"
           >
             {machines.map((m) => (
-              <option key={m.id} value={m.id}>
+              <option key={m.id} value={`${m.type}:${m.id}`}>
                 {m.label}
               </option>
             ))}

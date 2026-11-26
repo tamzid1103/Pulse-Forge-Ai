@@ -1,9 +1,9 @@
 import React from "react";
 import { Activity, AlertTriangle, CheckCircle2, ChevronRight, Layers, ShieldCheck } from "lucide-react";
-import { FleetMachine } from "../types";
+import { FleetMachine, MachineType } from "../types";
 
 interface FleetHealthBoardProps {
-  onSelectMachine: (machineId: string) => void;
+  onSelectMachine: (machineId: string, machineType: MachineType) => void;
 }
 
 export const FleetHealthBoard: React.FC<FleetHealthBoardProps> = ({ onSelectMachine }) => {
@@ -12,49 +12,53 @@ export const FleetHealthBoard: React.FC<FleetHealthBoardProps> = ({ onSelectMach
       id: "fan_id_00",
       name: "Centrifugal Ventilation Fan #00",
       type: "Centrifugal Industrial Fan",
+      machineType: "fan",
       ratedRpm: 1750,
       powerKw: 45.0,
       vibrationZone: "Zone A",
       status: "normal",
       lastInspection: "10 mins ago",
-      score: 0.0019,
-      threshold: 0.0032,
+      score: 0.5245,
+      threshold: 0.8904,
     },
     {
-      id: "fan_id_02",
-      name: "Line B Exhaust Blower #02",
-      type: "High-Volume Exhaust Fan",
-      ratedRpm: 1450,
-      powerKw: 30.0,
-      vibrationZone: "Zone C",
-      status: "possible_anomaly",
-      lastInspection: "25 mins ago",
-      score: 0.0068,
-      threshold: 0.0032,
-    },
-    {
-      id: "fan_id_04",
-      name: "Boiler Induced Draft Fan #04",
-      type: "Induced Draft Fan",
-      ratedRpm: 1800,
-      powerKw: 75.0,
-      vibrationZone: "Zone B",
+      id: "pump_id_00",
+      name: "Process Coolant Pump #00",
+      type: "Centrifugal Water Pump",
+      machineType: "pump",
+      ratedRpm: 2950,
+      powerKw: 37.0,
+      vibrationZone: "Zone A",
       status: "normal",
-      lastInspection: "1 hour ago",
-      score: 0.0022,
-      threshold: 0.0032,
+      lastInspection: "18 mins ago",
+      score: 0.618,
+      threshold: 1.0363,
     },
     {
-      id: "fan_id_06",
-      name: "Secondary Cooling Tower Fan #06",
-      type: "Axial Cooling Fan",
-      ratedRpm: 900,
-      powerKw: 22.0,
+      id: "valve_id_00",
+      name: "Steam Isolation Valve #00",
+      type: "Industrial Control Valve",
+      machineType: "valve",
+      ratedRpm: 0,
+      powerKw: 1.5,
       vibrationZone: "Zone B",
       status: "needs_review",
-      lastInspection: "3 hours ago",
-      score: 0.0028,
-      threshold: 0.0032,
+      lastInspection: "42 mins ago",
+      score: 0.391,
+      threshold: 0.4216,
+    },
+    {
+      id: "slider_id_00",
+      name: "Assembly Linear Slide Rail #00",
+      type: "Ball-Screw Slide Rail Actuator",
+      machineType: "slider",
+      ratedRpm: 1200,
+      powerKw: 5.5,
+      vibrationZone: "Zone C",
+      status: "possible_anomaly",
+      lastInspection: "1 hour ago",
+      score: 1.184,
+      threshold: 0.8008,
     },
   ];
 
@@ -186,7 +190,7 @@ export const FleetHealthBoard: React.FC<FleetHealthBoardProps> = ({ onSelectMach
               <div className="mt-5 pt-3 border-t border-gray-800 flex items-center justify-between text-xs font-mono">
                 <span className="text-gray-400 text-[11px]">Inspected: {machine.lastInspection}</span>
                 <button
-                  onClick={() => onSelectMachine(machine.id)}
+                  onClick={() => onSelectMachine(machine.id, machine.machineType)}
                   className="flex items-center space-x-1 text-emerald-400 hover:text-emerald-300 font-medium transition"
                 >
                   <span>Open Diagnostic Studio</span>

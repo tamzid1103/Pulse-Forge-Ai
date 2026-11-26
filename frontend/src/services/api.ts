@@ -60,13 +60,80 @@ export const FALLBACK_SCENARIOS: DemoScenario[] = [
   },
   {
     id: "scenario_05",
-    filename: "05_ambient_factory_noise_shift.wav",
+    filename: "05_unfamiliar_operating_noise.wav",
     name: "Ambient Acoustic Domain Shift",
     machine_id: "fan_id_00",
+    machine_type: "fan",
     condition: "unfamiliar_shift",
-    description: "External forklift & forklift horn interference. High latent Mahalanobis distance.",
+    description: "External crane & forklift interference. High latent Mahalanobis distance.",
     expected_status: "needs_review",
-    file_path: "demo_audio/05_ambient_factory_noise_shift.wav",
+    file_path: "demo_audio/05_unfamiliar_operating_noise.wav",
+  },
+  {
+    id: "scenario_06",
+    filename: "06_pump_normal.wav",
+    name: "Centrifugal Pump Normal Flow",
+    machine_id: "pump_id_00",
+    machine_type: "pump",
+    condition: "normal",
+    description: "MIMII Centrifugal Pump ID 00 healthy steady-flow acoustic signature.",
+    expected_status: "normal",
+    file_path: "demo_audio/06_pump_normal.wav",
+  },
+  {
+    id: "scenario_07",
+    filename: "07_pump_anomaly.wav",
+    name: "Pump Cavitation / Seal Defect",
+    machine_id: "pump_id_00",
+    machine_type: "pump",
+    condition: "anomalous",
+    description: "MIMII Centrifugal Pump ID 00 impeller cavitation and seal wear signature.",
+    expected_status: "possible_anomaly",
+    file_path: "demo_audio/07_pump_anomaly.wav",
+  },
+  {
+    id: "scenario_08",
+    filename: "08_valve_normal.wav",
+    name: "Control Valve Normal Cycle",
+    machine_id: "valve_id_00",
+    machine_type: "valve",
+    condition: "normal",
+    description: "MIMII Industrial Valve ID 00 clean actuation acoustic baseline.",
+    expected_status: "normal",
+    file_path: "demo_audio/08_valve_normal.wav",
+  },
+  {
+    id: "scenario_09",
+    filename: "09_valve_anomaly.wav",
+    name: "Valve Internal Seat Leak",
+    machine_id: "valve_id_00",
+    machine_type: "valve",
+    condition: "anomalous",
+    description: "MIMII Industrial Valve ID 00 internal seat leakage / solenoid chatter.",
+    expected_status: "possible_anomaly",
+    file_path: "demo_audio/09_valve_anomaly.wav",
+  },
+  {
+    id: "scenario_10",
+    filename: "10_slider_normal.wav",
+    name: "Slide Rail Smooth Traverse",
+    machine_id: "slider_id_00",
+    machine_type: "slider",
+    condition: "normal",
+    description: "MIMII Linear Slide Rail ID 00 lubricated ball-screw nominal motion.",
+    expected_status: "normal",
+    file_path: "demo_audio/10_slider_normal.wav",
+  },
+  {
+    id: "scenario_11",
+    filename: "11_slider_anomaly.wav",
+    name: "Slide Rail Ball-Screw Pitting",
+    machine_id: "slider_id_00",
+    machine_type: "slider",
+    condition: "anomalous",
+    description: "MIMII Linear Slide Rail ID 00 abnormal ball-screw impact impulses.",
+    expected_status: "possible_anomaly",
+    file_path: "demo_audio/11_slider_anomaly.wav",
   },
 ];
 
@@ -81,22 +148,37 @@ export async function checkBackendHealth(): Promise<{ online: boolean; latencyMs
   }
 }
 
-export async function fetchDemoScenarios(): Promise<DemoScenario[]> {
+export async function fetchDemoScenarios(machineType: string = "all"): Promise<DemoScenario[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/scenarios`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${API_BASE}/api/v1/scenarios?machine_type=${encodeURIComponent(machineType)}`, {
+      signal: AbortSignal.timeout(3000),
+    });
     if (!res.ok) throw new Error("Failed to load scenarios");
     const data = await res.json();
-    return data.scenarios || FALLBACK_SCENARIOS;
+    const list: DemoScenario[] = Array.isArray(data) ? data : data.scenarios || FALLBACK_SCENARIOS;
+    return list.map((s) => ({
+      ...s,
+      name: s.name || s.label || s.filename,
+      machine_id: s.machine_id || `${s.machine_type || "fan"}_id_00`,
+      machine_type: s.machine_type || "fan",
+    }));
   } catch {
     return FALLBACK_SCENARIOS;
   }
 }
 
-export async function evaluateScenario(scenarioId: string): Promise<AnalysisResponse> {
+export async function evaluateScenario(
+  scenarioId: string,
+  machineId?: string,
+  machineType?: string
+): Promise<AnalysisResponse> {
   try {
+    const body = new FormData();
+    if (machineId) body.append("machine_id", machineId);
+    if (machineType) body.append("machine_type", machineType);
     const res = await fetch(`${API_BASE}/api/v1/analyze/scenario/${scenarioId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      body,
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) {
@@ -113,11 +195,13 @@ export async function evaluateScenario(scenarioId: string): Promise<AnalysisResp
 export async function uploadAudioAnalysis(
   file: File,
   machineId: string = "fan_id_00",
+  machineType: string = "fan",
   operatorNote: string = ""
 ): Promise<AnalysisResponse> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("machine_id", machineId);
+  formData.append("machine_type", machineType);
   formData.append("source_kind", "uploaded");
   formData.append("record_to_db", "true");
   formData.append("operator_note", operatorNote);
@@ -153,12 +237,16 @@ export async function generateCopilotWorkOrder(
     const res = await fetch(`${API_BASE}/api/v1/copilot/work-order`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ machine_id: machineId, analysis_result: result }),
+      body: JSON.stringify({
+        machine_id: machineId,
+        machine_type: result.machine_type || "fan",
+        decision_status: result.status,
+      }),
       signal: AbortSignal.timeout(12000),
     });
     if (!res.ok) throw new Error("Failed to generate work order");
     const data = await res.json();
-    return data.work_order;
+    return data.work_order || data;
   } catch (err) {
     return createSyntheticWorkOrder(result, machineId);
   }
@@ -238,9 +326,10 @@ function createSyntheticFallback(scenarioId: string): AnalysisResponse {
   const isNormal = match.expected_status === "normal";
   const isAnomaly = match.expected_status === "possible_anomaly";
 
+  const mType = match.machine_type || "fan";
   return {
     run_id: `offline-${Date.now()}`,
-    machine_id: match.machine_id,
+    machine_id: match.machine_id || `${mType}_id_00`,
     filename: match.filename,
     processing_ms: 18,
     analysis: {
@@ -254,10 +343,10 @@ function createSyntheticFallback(scenarioId: string): AnalysisResponse {
       recommended_action: isNormal
         ? "Continue regular scheduled monitoring."
         : isAnomaly
-        ? "Schedule immediate bearing raceway inspection."
+        ? `Schedule mechanical inspection for ${mType} assembly.`
         : "Check acoustic sensor coupling and ambient factory noise.",
-      machine_id: match.machine_id,
-      machine_type: "fan",
+      machine_id: match.machine_id || `${mType}_id_00`,
+      machine_type: mType,
       quality: {
         passed: match.expected_status !== "needs_review",
         rms_level: match.id === "scenario_03" ? 0.00001 : 0.038,

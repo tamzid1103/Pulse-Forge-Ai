@@ -10,12 +10,13 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
-import { AnalysisResult, DemoScenario } from "../types";
+import { AnalysisResult, DemoScenario, MachineType } from "../types";
 import { AudioVisualizer } from "./AudioVisualizer";
 
 interface DiagnosticStudioProps {
   scenarios: DemoScenario[];
   activeScenarioId: string;
+  machineType: MachineType;
   onSelectScenario: (scenarioId: string) => void;
   onUploadFile: (file: File) => void;
   analysis: AnalysisResult | null;
@@ -26,6 +27,7 @@ interface DiagnosticStudioProps {
 export const DiagnosticStudio: React.FC<DiagnosticStudioProps> = ({
   scenarios,
   activeScenarioId,
+  machineType,
   onSelectScenario,
   onUploadFile,
   analysis,
@@ -102,8 +104,8 @@ export const DiagnosticStudio: React.FC<DiagnosticStudioProps> = ({
               <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-blue-950/80 text-blue-300 border border-blue-500/30">
                 Predictive Plant Track
               </span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
-                Centrifugal Fan MVP
+              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 uppercase">
+                Active Engine: {machineType}
               </span>
             </div>
             <h1 className="text-xl font-bold text-white mt-1">
