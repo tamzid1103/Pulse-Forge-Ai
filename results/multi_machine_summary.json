@@ -1,0 +1,95 @@
+{
+  "pump": {
+    "machine_type": "pump",
+    "machine_id": "id_00",
+    "noise_condition": "6_dB",
+    "train_files": 16,
+    "val_files": 8,
+    "test_files": 10,
+    "epochs_trained": 20,
+    "training_seconds": 3.18,
+    "ae_threshold": 1.036323,
+    "familiarity_threshold": 15.156935,
+    "test_metrics": {
+      "threshold": 1.0363,
+      "auroc": 1.0,
+      "pr_auc": 1.0,
+      "f1_score": 0.9091,
+      "precision": 0.8333,
+      "recall": 1.0,
+      "false_positive_rate": 0.2,
+      "confusion_matrix": {
+        "true_positive": 5,
+        "false_positive": 1,
+        "true_negative": 4,
+        "false_negative": 0
+      }
+    },
+    "exported_demos": {
+      "normal": "06_pump_normal.wav",
+      "abnormal": "07_pump_anomaly.wav"
+    }
+  },
+  "valve": {
+    "machine_type": "valve",
+    "machine_id": "id_00",
+    "noise_condition": "6_dB",
+    "train_files": 16,
+    "val_files": 8,
+    "test_files": 10,
+    "epochs_trained": 72,
+    "training_seconds": 6.39,
+    "ae_threshold": 0.42156,
+    "familiarity_threshold": 16.287163,
+    "test_metrics": {
+      "threshold": 0.4216,
+      "auroc": 0.72,
+      "pr_auc": 0.6683,
+      "f1_score": 0.8,
+      "precision": 0.8,
+      "recall": 0.8,
+      "false_positive_rate": 0.2,
+      "confusion_matrix": {
+        "true_positive": 4,
+        "false_positive": 1,
+        "true_negative": 4,
+        "false_negative": 1
+      }
+    },
+    "exported_demos": {
+      "normal": "08_valve_normal.wav",
+      "abnormal": "09_valve_anomaly.wav"
+    }
+  },
+  "slider": {
+    "machine_type": "slider",
+    "machine_id": "id_00",
+    "noise_condition": "6_dB",
+    "train_files": 16,
+    "val_files": 8,
+    "test_files": 10,
+    "epochs_trained": 55,
+    "training_seconds": 5.77,
+    "ae_threshold": 0.800776,
+    "familiarity_threshold": 16.483386,
+    "test_metrics": {
+      "threshold": 0.8008,
+      "auroc": 1.0,
+      "pr_auc": 1.0,
+      "f1_score": 0.7692,
+      "precision": 0.625,
+      "recall": 1.0,
+      "false_positive_rate": 0.6,
+      "confusion_matrix": {
+        "true_positive": 5,
+        "false_positive": 3,
+        "true_negative": 2,
+        "false_negative": 0
+      }
+    },
+    "exported_demos": {
+      "normal": "10_slider_normal.wav",
+      "abnormal": "11_slider_anomaly.wav"
+    }
+  }
+}

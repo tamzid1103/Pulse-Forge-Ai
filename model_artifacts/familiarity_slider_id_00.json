@@ -1,0 +1,8 @@
+{
+  "machine_type": "slider",
+  "machine_id": "id_00",
+  "model_type": "LatentFamiliarityEstimator",
+  "latent_dim": 32,
+  "threshold": 16.483386,
+  "num_training_samples": 304
+}
