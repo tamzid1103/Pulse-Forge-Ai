@@ -16,7 +16,7 @@ Key architectural principles:
 |---|---|---:|---|
 | `id` | TEXT | Yes | UUID primary key |
 | `created_at` | TEXT | Yes | UTC ISO-8601 timestamp |
-| `machine_type` | TEXT | Yes | Machine family (`fan`) |
+| `machine_type` | TEXT | Yes | Machine family (`fan`, `pump`, `valve`, `slider`) |
 | `machine_id` | TEXT | Yes | Specific machine ID (e.g. `fan_id_00`) |
 | `input_label` | TEXT | No | Sanitized display label (e.g. `01_normal_fan.wav`) |
 | `source_kind` | TEXT | Yes | `uploaded`, `demo_sample`, or `synthetic` |
@@ -39,7 +39,7 @@ Key architectural principles:
 CREATE TABLE IF NOT EXISTS analysis_runs (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
-    machine_type TEXT NOT NULL CHECK (machine_type = 'fan'),
+    machine_type TEXT NOT NULL CHECK (machine_type IN ('fan', 'pump', 'valve', 'slider')),
     machine_id TEXT NOT NULL,
     input_label TEXT,
     source_kind TEXT NOT NULL CHECK (source_kind IN ('uploaded', 'demo_sample', 'synthetic')),

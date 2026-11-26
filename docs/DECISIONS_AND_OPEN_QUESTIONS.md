@@ -356,3 +356,15 @@ Approved by:
 - **Impact on scope:** Completes Milestone M11.
 - **Documents updated:** `frontend/`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
 - **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-016: Multi-Machine Fleet Extension, ModelRegistry & Tukey Extreme Familiarity Calibration (Milestone M12)
+- **Date:** 2026-11-26
+- **Question / change:** How should PulseForge AI extend from fan-only anomaly screening to a multi-machine industrial fleet (Centrifugal Pumps, Control Valves, Linear Slide Rails) without fragmenting codebases or triggering false domain-shift rejections on legitimate mechanical faults?
+- **Options considered:**
+  - (A) Train one global combined Autoencoder across all 4 machine families (risks losing sensitivity to machine-specific acoustics).
+  - (B) Instantiate machine-specific `FeatureScaler`, `AutoencoderDetector`, and `LatentFamiliarityEstimator` bundles orchestrated by a unified `ModelRegistry` (`src/models/registry.py`).
+- **Chosen option:** Option B, pairing machine-specific artifact bundles with non-destructive SQLite schema migration and a combined Tukey extreme outlier fence (`max(Q3 + 3.0 * IQR, 2.25 * max_normal)`) derived strictly on normal train+val embeddings.
+- **Reason / evidence:** Per-machine normalization and autoencoders preserve specialized harmonic representations, achieving `1.0000` AUROC on MIMII Pump and Slide Rail test splits and `0.8000` F1 on Control Valves, while reliably flagging unrelated ambient factory noise (40–71 latent distance) as `needs_review`. Verified by 20 new automated tests in `tests/test_multi_machine.py` (198/198 total tests passing).
+- **Impact on scope:** Completes Milestone M12.
+- **Documents updated:** `src/config.py`, `src/persistence.py`, `src/decision.py`, `src/models/registry.py`, `src/service.py`, `src/copilot.py`, `src/api.py`, `src/mcp_server.py`, `app/dashboard.py`, `frontend/`, `scripts/`, `tests/test_multi_machine.py`, `docs/`.
+- **Approved by:** Tamzidul & Antigravity.

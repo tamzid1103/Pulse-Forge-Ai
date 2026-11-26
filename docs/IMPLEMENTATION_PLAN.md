@@ -25,7 +25,7 @@
 | M9 | PulseForge Custom Model Context Protocol (MCP) Server | Should | ✅ Complete (MCPServer 2.x, 5 tools, 4 resources, 2 prompts) | M6/M8 |
 | M10 | FastAPI REST & WebSocket Backend | Should | ✅ Complete (18 tests, REST + Live WS streaming) | M6 |
 | M11 | Lovable React Industrial Enterprise Frontend | Should | ✅ Complete (React 18 + Vite + Tailwind + Lovable Cloud) | M10 |
-| M12 | Multi-Machine Industrial Fleet Extension (Pumps, Valves) | Could | 📋 Phase 2 (Finals) | M4/M5 |
+| M12 | Multi-Machine Industrial Fleet Extension (Pumps, Valves) | Could | ✅ Complete (Fan, Pump, Valve, Slide Rail MIMII models + Registry) | M4/M5 |
 | M13 | Edge Runtime Packaging (ONNX CPU Export & Gateway) | Could | 📋 Phase 2 (Finals) | M4/M8 |
 | M14 | Finals Pitch Deck, Stage Rehearsal & Live Resilience | Must | 📋 Phase 2 (Finals) | M9-M11 |
 
@@ -390,21 +390,24 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 
 ### M12 — Multi-Machine Industrial Fleet Extension (Pumps, Valves, Slide Rails)
 
-**Status:** 📋 Phase 2 (Planned)
+**Status:** ✅ Complete (All 4 MIMII Machine Families Trained, Routed & Verified)
 
 **Objective:** Extend acoustic diagnostic capabilities beyond centrifugal ventilation fans to include other core rotating and fluid machinery families from the MIMII benchmark (Centrifugal Pumps, Industrial Valves, and Linear Slide Rails).
 
 **Files:**
-- `src/models/registry.py`
-- `data/manifests/pump_manifest.csv`
-- `data/manifests/valve_manifest.csv`
-- `scripts/train_multi_machine.py`
+- `src/models/registry.py` (`ModelRegistry` dynamic loader + `MachineModelBundle`)
+- `data/manifests/pump_manifest.csv`, `data/manifests/valve_manifest.csv`, `data/manifests/slider_manifest.csv`
+- `scripts/download_subset.py`, `scripts/build_manifest.py`, `scripts/train_multi_machine.py`
+- `data/knowledge_base/multi_machine_maintenance_sop.md`
+- `results/multi_machine_summary.json`
+- `tests/test_multi_machine.py` (20 automated tests)
 
-**Key Tasks:**
-1. Download targeted MIMII subsets for Pump (id_00), Valve (id_00), and Slide Rail (id_00).
-2. Train machine-specific Autoencoders and latent familiarity estimators.
-3. Implement `ModelRegistry` dynamic loading pattern in `src/service.py` to route audio based on selected machine type.
-4. Update UI selectors to support multi-machine fleet switching.
+**Accomplishments:**
+1. Downloaded genuine MIMII 6 dB SNR acoustic subsets (`id_00`, 34 files each: 24 normal / 10 abnormal) for Pump, Valve, and Slide Rail via HTTP Range requests and built leakage-aware manifests.
+2. Trained and calibrated dedicated `FeatureScaler`, `AutoencoderDetector`, and `LatentFamiliarityEstimator` bundles (`pump` AUROC 1.0000 / Recall 1.0000; `valve` AUROC 0.7200 / Recall 0.8000 / F1 0.8000; `slider` AUROC 1.0000 / Recall 1.0000).
+3. Implemented `ModelRegistry` in `src/models/registry.py` and refactored `PulseForgeService` for dynamic machine-type routing, plus non-destructive SQLite `CHECK` migration in `src/persistence.py`.
+4. Extended Copilot SOPs (`WO-PUMP-`, `WO-VALVE-`, `WO-SLDR-`), FastAPI (`/api/v1/fleet/scenarios`, `machine_type` routing), MCP server, Streamlit dashboard, and React frontend (`frontend/`).
+5. Exported 6 curated 16 kHz mono held-out test demo clips (`demo_audio/06..11_*.wav`) verified end-to-end across normal, anomaly, and OOD checks.
 
 ---
 
@@ -470,6 +473,6 @@ To accommodate the **Preliminary Submission Deadline (Nov 20)** while ensuring f
 | M9 | ✅ Complete | 18 MCP tests passed (156 tests total); `src/mcp_server.py` with 5 tools, 4 resources, 2 prompts; Stdio/SSE transports; Claude & Antigravity client configs | None. Ready for M10 |
 | M10 | ✅ Complete | 18 automated tests passed (178 tests total); FastAPI backend in `src/api.py` with REST endpoints, WebSocket streaming, Pydantic schemas, and security hardening (CORS + upload streaming limit) | None. Ready for M11 |
 | M11 | ✅ Complete | TypeScript + React 18 + Vite + Tailwind SCADA dashboard (`frontend/`), 4 operational views, real-time WebSocket audio streaming visualizer, OSHA work order generator, and Lovable cloud deployment (`projectId: 87ff379e-b3a5-47ed-ade8-f1345d92ab5d`) | None. Ready for M12 |
-| M12 | 📋 Phase 2 | Multi-machine fleet expansion (pumps, valves, slide rails) | Planned for Finals |
+| M12 | ✅ Complete | 20 multi-machine tests passed (198 tests total); authentic MIMII subsets downloaded for Pump (`1.0000` AUROC), Valve (`0.7200` AUROC / `0.8000` F1), and Slide Rail (`1.0000` AUROC); `ModelRegistry` routing, SQLite migration, and dual UI selectors live | None. Ready for M13 |
 | M13 | 📋 Phase 2 | ONNX CPU runtime export & Edge Gateway deployment | Planned for Finals |
 | M14 | 📋 Phase 2 | Finals Pitch Deck, Stage Rehearsal & Live Resilience Suite | Final delivery for competition stage |
