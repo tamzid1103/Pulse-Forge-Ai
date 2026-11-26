@@ -21,6 +21,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger("pulseforge.download")
 
 DEFAULT_ZENODO_URL = "https://zenodo.org/api/records/3384388/files/6_dB_fan.zip/content"
+MIMII_ZENODO_URLS: dict[str, str] = {
+    "fan": "https://zenodo.org/api/records/3384388/files/6_dB_fan.zip/content",
+    "pump": "https://zenodo.org/api/records/3384388/files/6_dB_pump.zip/content",
+    "valve": "https://zenodo.org/api/records/3384388/files/6_dB_valve.zip/content",
+    "slider": "https://zenodo.org/api/records/3384388/files/6_dB_slider.zip/content",
+}
 
 
 class RemoteSeekableFile(io.RawIOBase):
@@ -77,33 +83,39 @@ class RemoteSeekableFile(io.RawIOBase):
         return b""
 
 
-def download_fan_subset(
+def download_machine_subset(
     output_dir: Path,
+    machine_type: str = "fan",
     machine_id: str = "id_00",
-    max_normal: int = 60,
-    max_abnormal: int = 20,
-    zenodo_url: str = DEFAULT_ZENODO_URL,
+    max_normal: int = 35,
+    max_abnormal: int = 15,
+    zenodo_url: str | None = None,
 ) -> dict[str, Any]:
-    """Download a manageable subset of normal and abnormal WAVs for a machine ID."""
-    logger.info(f"Connecting to Zenodo remote zip ({zenodo_url})...")
-    remote_file = RemoteSeekableFile(zenodo_url)
+    """Download a manageable subset of normal and abnormal WAVs for a MIMII machine family."""
+    m_type = machine_type.lower().strip()
+    if m_type not in MIMII_ZENODO_URLS:
+        raise ValueError(f"Unsupported MIMII machine_type '{machine_type}'. Must be one of {list(MIMII_ZENODO_URLS)}")
+
+    url = zenodo_url or MIMII_ZENODO_URLS[m_type]
+    logger.info(f"[{m_type}] Connecting to Zenodo remote zip ({url})...")
+    remote_file = RemoteSeekableFile(url)
     zf = zipfile.ZipFile(remote_file)
 
-    prefix_normal = f"fan/{machine_id}/normal/"
-    prefix_abnormal = f"fan/{machine_id}/abnormal/"
+    prefix_normal = f"{m_type}/{machine_id}/normal/"
+    prefix_abnormal = f"{m_type}/{machine_id}/abnormal/"
 
     all_names = zf.namelist()
     normal_files = sorted([n for n in all_names if n.startswith(prefix_normal) and n.endswith(".wav")])
     abnormal_files = sorted([n for n in all_names if n.startswith(prefix_abnormal) and n.endswith(".wav")])
 
-    logger.info(f"Available for {machine_id}: {len(normal_files)} normal, {len(abnormal_files)} abnormal files.")
+    logger.info(f"[{m_type}] Available for {machine_id}: {len(normal_files)} normal, {len(abnormal_files)} abnormal files.")
 
     selected_normal = normal_files[:max_normal]
     selected_abnormal = abnormal_files[:max_abnormal]
 
     target_files = [(f, "normal") for f in selected_normal] + [(f, "abnormal") for f in selected_abnormal]
 
-    logger.info(f"Target download: {len(selected_normal)} normal + {len(selected_abnormal)} abnormal = {len(target_files)} files.")
+    logger.info(f"[{m_type}] Target download: {len(selected_normal)} normal + {len(selected_abnormal)} abnormal = {len(target_files)} files.")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     downloaded: list[dict[str, Any]] = []
@@ -120,21 +132,23 @@ def download_fan_subset(
         else:
             data = zf.read(archive_path)
             dest_path.write_bytes(data)
-            logger.info(f"[{idx}/{len(target_files)}] Downloaded: {archive_path} ({len(data)} bytes) -> {dest_path.name}")
+            logger.info(f"[{idx}/{len(target_files)}] Downloaded [{m_type}]: {archive_path} ({len(data)} bytes) -> {dest_path.name}")
 
         downloaded.append({
             "archive_path": archive_path,
             "local_path": dest_path.as_posix(),
+            "machine_type": m_type,
             "machine_id": machine_id,
             "condition": condition,
             "size_bytes": dest_path.stat().st_size,
         })
 
     elapsed = round(time.time() - start_time, 2)
-    logger.info(f"Download complete: {len(downloaded)} files in {elapsed}s.")
+    logger.info(f"[{m_type}] Download complete: {len(downloaded)} files in {elapsed}s.")
 
     summary = {
-        "source_url": zenodo_url,
+        "source_url": url,
+        "machine_type": m_type,
         "machine_id": machine_id,
         "noise_condition": "6_dB",
         "total_files": len(downloaded),
@@ -146,23 +160,55 @@ def download_fan_subset(
     return summary
 
 
+def download_fan_subset(
+    output_dir: Path,
+    machine_id: str = "id_00",
+    max_normal: int = 60,
+    max_abnormal: int = 20,
+    zenodo_url: str = DEFAULT_ZENODO_URL,
+) -> dict[str, Any]:
+    """Backward-compatible wrapper for downloading the fan subset."""
+    return download_machine_subset(
+        output_dir=output_dir,
+        machine_type="fan",
+        machine_id=machine_id,
+        max_normal=max_normal,
+        max_abnormal=max_abnormal,
+        zenodo_url=zenodo_url,
+    )
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download manageable MIMII fan subset")
-    parser.add_argument("--output-dir", type=str, default="data/raw", help="Target output directory")
+    parser = argparse.ArgumentParser(description="Download manageable MIMII machine audio subset")
+    parser.add_argument("--machine-type", type=str, default="fan", choices=["fan", "pump", "valve", "slider", "all"], help="MIMII machine family")
+    parser.add_argument("--output-dir", type=str, default="", help="Target output directory (defaults to data/raw/<machine_type> for non-fan)")
     parser.add_argument("--machine-id", type=str, default="id_00", help="Machine ID (e.g. id_00)")
-    parser.add_argument("--max-normal", type=int, default=60, help="Max normal files to download")
-    parser.add_argument("--max-abnormal", type=int, default=20, help="Max abnormal files to download")
+    parser.add_argument("--max-normal", type=int, default=35, help="Max normal files to download")
+    parser.add_argument("--max-abnormal", type=int, default=15, help="Max abnormal files to download")
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent.parent
-    out_dir = project_root / args.output_dir
-    summary = download_fan_subset(
-        output_dir=out_dir,
-        machine_id=args.machine_id,
-        max_normal=args.max_normal,
-        max_abnormal=args.max_abnormal,
-    )
-    print(json.dumps(summary, indent=2))
+    targets = ["pump", "valve", "slider"] if args.machine_type == "all" else [args.machine_type]
+
+    results = []
+    for m_type in targets:
+        if args.output_dir:
+            out_dir = project_root / args.output_dir
+        elif m_type == "fan":
+            out_dir = project_root / "data" / "raw"
+        else:
+            out_dir = project_root / "data" / "raw" / m_type
+
+        summary = download_machine_subset(
+            output_dir=out_dir,
+            machine_type=m_type,
+            machine_id=args.machine_id,
+            max_normal=args.max_normal,
+            max_abnormal=args.max_abnormal,
+        )
+        results.append(summary)
+
+    print(json.dumps(results if len(results) > 1 else results[0], indent=2))
 
 
 if __name__ == "__main__":

@@ -48,7 +48,12 @@ def build_manifest(
     """Scan data_dir, extract metadata, assign splits, and save CSV manifest."""
     project_root = output_manifest.resolve().parent.parent.parent
 
-    wav_files = sorted(data_dir.glob("**/*.wav"))
+    all_wavs = sorted(data_dir.glob("**/*.wav"))
+    sibling_machines = {"fan", "pump", "valve", "slider"} - {machine_type.lower()}
+    wav_files = [
+        p for p in all_wavs
+        if not any(part in sibling_machines for part in p.relative_to(data_dir).parts)
+    ]
     logger.info(f"Scanning {len(wav_files)} WAV files in {data_dir}...")
 
     normal_records: list[dict[str, Any]] = []
@@ -134,16 +139,26 @@ def build_manifest(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build fan dataset manifest")
-    parser.add_argument("--data-dir", type=str, default="data/raw", help="Path to audio directory")
-    parser.add_argument("--output", type=str, default="data/manifests/fan_manifest.csv", help="Output CSV path")
+    parser = argparse.ArgumentParser(description="Build MIMII machine dataset manifest")
+    parser.add_argument("--machine-type", type=str, default="fan", choices=["fan", "pump", "valve", "slider"], help="Machine family")
+    parser.add_argument("--data-dir", type=str, default="", help="Path to audio directory")
+    parser.add_argument("--output", type=str, default="", help="Output CSV path")
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parent.parent
-    data_path = project_root / args.data_dir
-    output_path = project_root / args.output
+    m_type = args.machine_type.lower().strip()
+    data_rel = args.data_dir or ("data/raw" if m_type == "fan" else f"data/raw/{m_type}")
+    out_rel = args.output or f"data/manifests/{m_type}_manifest.csv"
 
-    records = build_manifest(data_dir=data_path, output_manifest=output_path)
+    data_path = project_root / data_rel
+    output_path = project_root / out_rel
+
+    records = build_manifest(
+        data_dir=data_path,
+        output_manifest=output_path,
+        machine_type=m_type,
+        source_archive=f"6_dB_{m_type}.zip",
+    )
     # Print split counts
     splits: dict[str, dict[str, int]] = {}
     for r in records:
