@@ -52,7 +52,7 @@ from app.ui_components import (
 
 # Backwards-compatible alias for testing
 plot_acoustic_features = render_acoustic_plots
-from src.config import AppConfig, MACHINE_FAMILY_METADATA
+from src.config import AppConfig, MACHINE_FAMILY_METADATA, resolve_supabase_credentials
 from src.copilot import IndustrialCopilot
 from src.decision import DecisionStatus
 from src.persistence import AnalysisStore
@@ -85,12 +85,49 @@ def get_service() -> PulseForgeService:
     cfg = AppConfig()
     db_path = cfg.paths.project_root / "data" / "analysis_history.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    store = AnalysisStore(db_path)
+    secrets_obj = None
+    try:
+        secrets_obj = st.secrets
+    except Exception:
+        secrets_obj = None
+    sb_url, sb_key = resolve_supabase_credentials(secrets_provider=secrets_obj)
+    running_under_pytest = bool(os.environ.get("PYTEST_CURRENT_TEST"))
+    enable_cloud = bool(cfg.supabase.enabled and sb_url and sb_key and not running_under_pytest)
+    store = AnalysisStore(
+        db_path,
+        supabase_url=sb_url,
+        supabase_key=sb_key,
+        enable_cloud=enable_cloud,
+        timeout_seconds=cfg.supabase.timeout_seconds,
+        probe_ttl_seconds=cfg.supabase.probe_ttl_seconds,
+    )
     return PulseForgeService(config=cfg, store=store)
 
 
 service = get_service()
 config = service.config
+
+# Hybrid Cloud / Offline Failover Status & Automatic Reconnect Sync
+persistence_status = service.sync_cloud_store(force=False)
+_prev_persist_mode = st.session_state.get("_prev_persistence_mode")
+_cur_persist_mode = persistence_status.get("mode", "local_only")
+_synced_now = int(persistence_status.get("last_synced_count") or 0)
+
+if _cur_persist_mode == "offline_sqlite":
+    if _prev_persist_mode != "offline_sqlite" and not st.session_state.get("_offline_popup_shown", False):
+        st.toast("Offline Mode : Operating Locally", icon="⚠️")
+        st.session_state["_offline_popup_shown"] = True
+elif _cur_persist_mode == "supabase":
+    st.session_state["_offline_popup_shown"] = False
+    if _synced_now > 0:
+        st.toast(
+            f"Back Online — Uploaded {_synced_now} local record(s) to Supabase",
+            icon="✅",
+        )
+    elif _prev_persist_mode == "offline_sqlite":
+        st.toast("Connection Restored — Using Supabase Cloud Database", icon="✅")
+
+st.session_state["_prev_persistence_mode"] = _cur_persist_mode
 
 
 @st.cache_resource
@@ -215,10 +252,34 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-    # 5. Quick Audit Summary & Management
+    # 5. Quick Audit Summary & Cloud Sync Status
+    _p_mode = persistence_status.get("mode", "local_only")
+    _p_pending = int(persistence_status.get("pending_sync_count") or 0)
+    if _p_mode == "supabase":
+        _sync_html = '<span style="color:#34D399; font-weight:600;">● Supabase Cloud (Online)</span>'
+    elif _p_mode == "offline_sqlite":
+        _pending_suffix = f" ({_p_pending} queued)" if _p_pending > 0 else ""
+        _sync_html = f'<span style="color:#FBBF24; font-weight:600;">⚠ Offline Mode : Operating Locally{_pending_suffix}</span>'
+    else:
+        _sync_html = '<span style="color:#94A3B8;">○ Local SQLite Database</span>'
+
+    st.markdown(
+        f"""
+        <div style="font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.8rem; margin-bottom: 0.25rem;">
+            Database Sync
+        </div>
+        <div style="font-size: 0.75rem; margin-bottom: 0.45rem;">{_sync_html}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if persistence_status.get("cloud_configured") and (_p_mode == "offline_sqlite" or _p_pending > 0):
+        if st.button("Retry Supabase Sync", width="stretch", key="retry_supabase_sync_btn"):
+            service.sync_cloud_store(force=True)
+            st.rerun()
+
     st.markdown(
         """
-        <div style="font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.8rem; margin-bottom: 0.35rem;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.6rem; margin-bottom: 0.35rem;">
             Recent Inspections
         </div>
         """,
@@ -295,6 +356,20 @@ with st.sidebar:
 
     # 7. Honest footer
     render_sidebar_footer()
+
+
+# Workspace-level Offline Mode notification banner (visible across all views)
+if persistence_status.get("mode") == "offline_sqlite":
+    _pending_cnt = int(persistence_status.get("pending_sync_count") or 0)
+    _queue_msg = (
+        f" **{_pending_cnt} local inspection record(s)** queued in SQLite and will upload to Supabase automatically once internet returns."
+        if _pending_cnt > 0
+        else " Inspection records are safely saved to local SQLite and will upload to Supabase automatically once internet returns."
+    )
+    st.warning(
+        f"**Offline Mode : Operating Locally** — Supabase cloud database is currently unreachable.{_queue_msg}",
+        icon="⚠️",
+    )
 
 
 # ===========================================================================
@@ -533,6 +608,14 @@ if selected_view == "Acoustic Diagnostic Studio":
                         "audio_sig": sig,
                         "run_id": rid,
                     }
+                    _post_status = service.get_persistence_status()
+                    if _post_status.get("mode") == "offline_sqlite":
+                        st.toast("Offline Mode : Operating Locally", icon="⚠️")
+                    elif int(_post_status.get("last_synced_count") or 0) > 0:
+                        st.toast(
+                            f"Synced {int(_post_status['last_synced_count'])} record(s) to Supabase",
+                            icon="✅",
+                        )
                 except Exception as ex:
                     st.error(f"Analysis Error: {ex}")
                     st.session_state["analysis_cache"] = None
@@ -951,12 +1034,19 @@ elif selected_view == "Plant Fleet Overview":
     with f4:
         summary_stats = service.get_summary_stats()
         total_runs = summary_stats.get("total_inspections", 0)
+        _fleet_db_sub = (
+            "Logged in Supabase Cloud"
+            if persistence_status.get("mode") == "supabase"
+            else "Offline Mode : Operating Locally (SQLite)"
+            if persistence_status.get("mode") == "offline_sqlite"
+            else "Logged in local SQLite database"
+        )
         st.markdown(
             f"""
             <div class="metric-tile">
                 <div class="metric-tile-label">Audit Log Count</div>
                 <div class="metric-tile-val" style="color: #0F766E;">{total_runs} Runs</div>
-                <div class="metric-tile-sub">Logged in local SQLite database</div>
+                <div class="metric-tile-sub">{_fleet_db_sub}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1156,16 +1246,51 @@ elif selected_view == "Model Benchmarks & Validation":
 # VIEW 4: INSPECTION HISTORY & AUDIT TRAIL
 # ===========================================================================
 elif selected_view == "Inspection History & Audit":
+    _v4_mode = persistence_status.get("mode", "local_only")
+    _v4_badge = (
+        "Database: Supabase Cloud"
+        if _v4_mode == "supabase"
+        else "Offline Mode : Operating Locally"
+        if _v4_mode == "offline_sqlite"
+        else "Database: Local SQLite"
+    )
+    _v4_sub = (
+        "Synchronized cloud metadata audit log backed by Supabase Postgres & local SQLite failover."
+        if _v4_mode == "supabase"
+        else "Offline Mode : Operating Locally — records queued in local SQLite until Supabase connectivity returns."
+        if _v4_mode == "offline_sqlite"
+        else "Immutable local SQLite records for ISO 13374 condition monitoring compliance."
+    )
     render_page_header(
         title="Inspection History & Audit Trail",
-        subtitle="Immutable local SQLite records for ISO 13374 condition monitoring compliance.",
-        badge_label="Database: SQLite",
+        subtitle=_v4_sub,
+        badge_label=_v4_badge,
     )
+
+    if persistence_status.get("cloud_configured"):
+        sync_c1, sync_c2 = st.columns([4, 1], vertical_alignment="center")
+        with sync_c1:
+            _p_cnt = int(persistence_status.get("pending_sync_count") or 0)
+            if _v4_mode == "supabase":
+                st.caption(f"Cloud Status: Connected to Supabase (`{_p_cnt}` pending local writes).")
+            else:
+                st.caption(f"Cloud Status: Offline Mode : Operating Locally (`{_p_cnt}` record(s) waiting to upload).")
+        with sync_c2:
+            if st.button("Sync with Supabase", width="stretch", key="audit_sync_btn"):
+                res_sync = service.sync_cloud_store(force=True)
+                if res_sync.get("mode") == "supabase":
+                    st.toast(
+                        f"Supabase synced ({int(res_sync.get('last_synced_count') or 0)} uploaded)",
+                        icon="✅",
+                    )
+                else:
+                    st.toast("Offline Mode : Operating Locally", icon="⚠️")
+                st.rerun()
 
     all_runs = service.get_history(limit=100)
 
     if not all_runs:
-        st.info("No inspection records found in `analysis_history.db`. Run an analysis in the Diagnostic Studio to populate records.")
+        st.info("No inspection records found yet. Run an analysis in the Diagnostic Studio to populate records.")
     else:
         runs_data = []
         for r in all_runs:
@@ -1178,6 +1303,7 @@ elif selected_view == "Inspection History & Audit":
                 "Threshold": round(float(r.get("threshold", 0.0)), 4),
                 "Familiarity Distance": round(float(r.get("unfamiliarity_score", 0.0)), 3) if r.get("unfamiliarity_score") else "N/A",
                 "Quality Status": r.get("quality_status", "N/A").upper(),
+                "Sync Status": str(r.get("sync_status", "synced")).upper(),
                 "Latency (ms)": r.get("processing_ms", 0),
             })
         df_runs = pd.DataFrame(runs_data)
