@@ -19,12 +19,14 @@ What this script does safely:
 
 ## Step 2 — Copy Your Project URL and Server Secret Key
 
-1. In Supabase Dashboard, go to **Project Settings → API** (or **API Keys**).
-2. Copy:
-   - **Project URL**: looks like `https://abcdefghijklmno.supabase.co`
-     *(Must start with `https://` — non-HTTPS URLs are rejected by PulseForge for security.)*
-   - **Secret key** (`sb_secret_...` or legacy `service_role` JWT):
-     > **Security Warning:** Only use this key on the **Python backend** (`.env` or Streamlit Cloud Secrets). **Never** paste it into `frontend/`, commit it to Git, or share it in screenshots.
+1. **Find your Project URL:**
+   - In the Supabase Dashboard left sidebar, click **`Data API`** (under **INTEGRATIONS**, just below `API Keys`) — your **Project URL** (`https://<project-ref>.supabase.co`) is displayed at the top.
+   - *(Alternatively, click the green **`Connect`** button in the top navbar → App Frameworks / API.)*
+2. **Copy your Server Secret Key:**
+   - Go to **Settings → API Keys**.
+   - Under **Secret keys** (`default`), click the eye/copy icon to copy your **`sb_secret_...`** key (or under **View legacy API keys** if using legacy `service_role` JWT).
+   - *(PulseForge automatically uses `apikey`-only headers for modern `sb_secret_...` keys and `Bearer` headers for legacy `eyJ...` JWT keys.)*
+   - > **Security Warning:** Only use this key on the **Python backend** (`.env` or Streamlit Cloud Secrets). **Never** use the `Publishable key` (`sb_publishable_...`) for server sync while `anon` is revoked, and **never** paste `sb_secret_...` into `frontend/` JS or Git.
 
 ---
 

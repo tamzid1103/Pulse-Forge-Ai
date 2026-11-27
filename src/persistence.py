@@ -156,10 +156,13 @@ class SupabasePostgRESTClient:
     def _headers(self, extra: dict[str, str] | None = None) -> dict[str, str]:
         headers = {
             "apikey": self._key,
-            "Authorization": f"Bearer {self._key}",
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
+        # Only send Authorization Bearer for legacy JWT keys (eyJ...);
+        # modern Supabase sb_secret_/sb_publishable_ keys are opaque and fail JWT parsing if put in Authorization.
+        if self._key.startswith("eyJ"):
+            headers["Authorization"] = f"Bearer {self._key}"
         if extra:
             headers.update(extra)
         return headers

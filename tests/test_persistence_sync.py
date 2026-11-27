@@ -79,9 +79,12 @@ class FakeSupabaseBackend:
         backend = self
 
         def handler(request: httpx.Request) -> httpx.Response:
-            # Verify auth headers are always present
+            # Verify apikey header is always present, and Bearer is omitted for modern sb_secret_ keys
             assert request.headers.get("apikey") == backend.secret_token
-            assert request.headers.get("Authorization") == f"Bearer {backend.secret_token}"
+            if backend.secret_token.startswith("eyJ"):
+                assert request.headers.get("Authorization") == f"Bearer {backend.secret_token}"
+            else:
+                assert "Authorization" not in request.headers
 
             if not backend.online:
                 raise httpx.ConnectError("Simulated plant Wi-Fi outage", request=request)
