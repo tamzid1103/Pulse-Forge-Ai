@@ -40,7 +40,7 @@ export function App() {
       setPersistence(health.persistence);
       if (health.persistence?.last_synced_count && health.persistence.last_synced_count > 0) {
         setSyncNotice(
-          `Connection restored — uploaded ${health.persistence.last_synced_count} local record(s) to Supabase.`
+          `Connection restored — uploaded ${health.persistence.last_synced_count} local record(s) to Cloud.`
         );
       }
     };
@@ -153,7 +153,7 @@ export function App() {
           className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border border-emerald-500/50 bg-emerald-950/95 px-4 py-3 text-xs text-emerald-100 shadow-2xl backdrop-blur flex items-start justify-between gap-3"
         >
           <div>
-            <div className="font-bold text-emerald-300">Supabase Cloud Synced</div>
+            <div className="font-bold text-emerald-300">Cloud Database Synced</div>
             <p className="mt-0.5 text-emerald-200/90">{syncNotice}</p>
           </div>
           <button

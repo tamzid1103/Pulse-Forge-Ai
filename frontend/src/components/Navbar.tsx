@@ -157,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 : persistenceMode === "offline_sqlite"
                 ? "Offline Mode : Operating Locally (SQLite queue active)"
                 : persistenceMode === "supabase"
-                ? `Connected to Supabase (${latencyMs}ms)`
+                ? `Cloud Connection: Online (${latencyMs}ms)`
                 : `Backend online (${latencyMs}ms)`
             }
           >

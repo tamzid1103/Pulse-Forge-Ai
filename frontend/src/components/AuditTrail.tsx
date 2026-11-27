@@ -129,7 +129,7 @@ export const AuditTrail: React.FC = () => {
               className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/40 text-xs font-medium text-blue-200 hover:bg-blue-600/30 transition"
             >
               <Database className="h-3.5 w-3.5" />
-              <span>Sync Supabase</span>
+              <span>Sync Cloud</span>
             </button>
           )}
           <button
