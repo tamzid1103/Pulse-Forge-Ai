@@ -149,11 +149,16 @@ html, body, [data-testid="stAppViewContainer"] {
     font-size: 0.8rem !important;
 }
 
-[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"],
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div > div {
     background-color: #0E1A2B !important;
+    color: #F8FAFC !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     border: 1px solid #294060 !important;
     border-radius: 6px !important;
-    color: #F8FAFC !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,

@@ -527,7 +527,7 @@ class AnalysisStore:
             label = "Local SQLite Only"
         elif self._is_online:
             mode = "supabase"
-            label = "Supabase Cloud (Online)"
+            label = "Cloud Connection: Online"
         else:
             mode = "offline_sqlite"
             label = "Offline Mode : Operating Locally"

@@ -121,11 +121,11 @@ elif _cur_persist_mode == "supabase":
     st.session_state["_offline_popup_shown"] = False
     if _synced_now > 0:
         st.toast(
-            f"Back Online — Uploaded {_synced_now} local record(s) to Supabase",
+            f"Back Online — Synced {_synced_now} local record(s) to Cloud",
             icon="✅",
         )
     elif _prev_persist_mode == "offline_sqlite":
-        st.toast("Connection Restored — Using Supabase Cloud Database", icon="✅")
+        st.toast("Connection Restored — Cloud Database Active", icon="✅")
 
 st.session_state["_prev_persistence_mode"] = _cur_persist_mode
 
@@ -256,7 +256,7 @@ with st.sidebar:
     _p_mode = persistence_status.get("mode", "local_only")
     _p_pending = int(persistence_status.get("pending_sync_count") or 0)
     if _p_mode == "supabase":
-        _sync_html = '<span style="color:#34D399; font-weight:600;">● Supabase Cloud (Online)</span>'
+        _sync_html = '<span style="color:#34D399; font-weight:600;">● Cloud Connection: Online</span>'
     elif _p_mode == "offline_sqlite":
         _pending_suffix = f" ({_p_pending} queued)" if _p_pending > 0 else ""
         _sync_html = f'<span style="color:#FBBF24; font-weight:600;">⚠ Offline Mode : Operating Locally{_pending_suffix}</span>'
@@ -273,7 +273,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     if persistence_status.get("cloud_configured") and (_p_mode == "offline_sqlite" or _p_pending > 0):
-        if st.button("Retry Supabase Sync", width="stretch", key="retry_supabase_sync_btn"):
+        if st.button("Retry Cloud Sync", width="stretch", key="retry_supabase_sync_btn"):
             service.sync_cloud_store(force=True)
             st.rerun()
 
@@ -362,12 +362,12 @@ with st.sidebar:
 if persistence_status.get("mode") == "offline_sqlite":
     _pending_cnt = int(persistence_status.get("pending_sync_count") or 0)
     _queue_msg = (
-        f" **{_pending_cnt} local inspection record(s)** queued in SQLite and will upload to Supabase automatically once internet returns."
+        f" **{_pending_cnt} local inspection record(s)** queued in SQLite and will upload to Cloud automatically once internet returns."
         if _pending_cnt > 0
-        else " Inspection records are safely saved to local SQLite and will upload to Supabase automatically once internet returns."
+        else " Inspection records are safely saved to local SQLite and will sync to Cloud automatically once internet returns."
     )
     st.warning(
-        f"**Offline Mode : Operating Locally** — Supabase cloud database is currently unreachable.{_queue_msg}",
+        f"**Offline Mode : Operating Locally** — Cloud database is currently unreachable.{_queue_msg}",
         icon="⚠️",
     )
 
@@ -613,7 +613,7 @@ if selected_view == "Acoustic Diagnostic Studio":
                         st.toast("Offline Mode : Operating Locally", icon="⚠️")
                     elif int(_post_status.get("last_synced_count") or 0) > 0:
                         st.toast(
-                            f"Synced {int(_post_status['last_synced_count'])} record(s) to Supabase",
+                            f"Synced {int(_post_status['last_synced_count'])} record(s) to Cloud",
                             icon="✅",
                         )
                 except Exception as ex:
@@ -1035,7 +1035,7 @@ elif selected_view == "Plant Fleet Overview":
         summary_stats = service.get_summary_stats()
         total_runs = summary_stats.get("total_inspections", 0)
         _fleet_db_sub = (
-            "Logged in Supabase Cloud"
+            "Logged in Cloud Telemetry DB"
             if persistence_status.get("mode") == "supabase"
             else "Offline Mode : Operating Locally (SQLite)"
             if persistence_status.get("mode") == "offline_sqlite"
@@ -1248,16 +1248,16 @@ elif selected_view == "Model Benchmarks & Validation":
 elif selected_view == "Inspection History & Audit":
     _v4_mode = persistence_status.get("mode", "local_only")
     _v4_badge = (
-        "Database: Supabase Cloud"
+        "Database: Cloud Online"
         if _v4_mode == "supabase"
         else "Offline Mode : Operating Locally"
         if _v4_mode == "offline_sqlite"
         else "Database: Local SQLite"
     )
     _v4_sub = (
-        "Synchronized cloud metadata audit log backed by Supabase Postgres & local SQLite failover."
+        "Synchronized cloud metadata audit log with local SQLite offline failover."
         if _v4_mode == "supabase"
-        else "Offline Mode : Operating Locally — records queued in local SQLite until Supabase connectivity returns."
+        else "Offline Mode : Operating Locally — records queued in local SQLite until cloud connectivity returns."
         if _v4_mode == "offline_sqlite"
         else "Immutable local SQLite records for ISO 13374 condition monitoring compliance."
     )
@@ -1272,15 +1272,15 @@ elif selected_view == "Inspection History & Audit":
         with sync_c1:
             _p_cnt = int(persistence_status.get("pending_sync_count") or 0)
             if _v4_mode == "supabase":
-                st.caption(f"Cloud Status: Connected to Supabase (`{_p_cnt}` pending local writes).")
+                st.caption(f"Cloud Status: Cloud Connection Online (`{_p_cnt}` pending local writes).")
             else:
                 st.caption(f"Cloud Status: Offline Mode : Operating Locally (`{_p_cnt}` record(s) waiting to upload).")
         with sync_c2:
-            if st.button("Sync with Supabase", width="stretch", key="audit_sync_btn"):
+            if st.button("Sync with Cloud", width="stretch", key="audit_sync_btn"):
                 res_sync = service.sync_cloud_store(force=True)
                 if res_sync.get("mode") == "supabase":
                     st.toast(
-                        f"Supabase synced ({int(res_sync.get('last_synced_count') or 0)} uploaded)",
+                        f"Cloud telemetry synced ({int(res_sync.get('last_synced_count') or 0)} uploaded)",
                         icon="✅",
                     )
                 else:
