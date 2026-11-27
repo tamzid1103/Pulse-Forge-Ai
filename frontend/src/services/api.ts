@@ -9,6 +9,7 @@ import {
   AuditRun,
   ChatMessage,
   DemoScenario,
+  PersistenceStatus,
   WebSocketMessage,
   WorkOrder,
 } from "../types";
@@ -137,12 +138,18 @@ export const FALLBACK_SCENARIOS: DemoScenario[] = [
   },
 ];
 
-export async function checkBackendHealth(): Promise<{ online: boolean; latencyMs: number }> {
+export async function checkBackendHealth(): Promise<{
+  online: boolean;
+  latencyMs: number;
+  persistence?: PersistenceStatus;
+}> {
   const start = performance.now();
   try {
     const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
     const latency = Math.round(performance.now() - start);
-    return { online: res.ok, latencyMs: latency };
+    if (!res.ok) return { online: false, latencyMs: latency };
+    const data = await res.json().catch(() => ({}));
+    return { online: true, latencyMs: latency, persistence: data.persistence };
   } catch {
     return { online: false, latencyMs: 0 };
   }
@@ -218,14 +225,36 @@ export async function uploadAudioAnalysis(
   return await res.json();
 }
 
-export async function fetchRecentRuns(limit: number = 20): Promise<AuditRun[]> {
+export async function fetchRecentRunsWithStatus(limit: number = 50): Promise<{
+  runs: AuditRun[];
+  persistence?: PersistenceStatus;
+}> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/runs?limit=${limit}`, { signal: AbortSignal.timeout(4000) });
     if (!res.ok) throw new Error("Failed to fetch runs");
     const data = await res.json();
-    return data.runs || [];
+    return { runs: data.runs || [], persistence: data.persistence };
   } catch {
-    return [];
+    return { runs: [] };
+  }
+}
+
+export async function fetchRecentRuns(limit: number = 20): Promise<AuditRun[]> {
+  const res = await fetchRecentRunsWithStatus(limit);
+  return res.runs;
+}
+
+export async function triggerCloudSync(): Promise<PersistenceStatus | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/runs/sync`, {
+      method: "POST",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.persistence || null;
+  } catch {
+    return null;
   }
 }
 

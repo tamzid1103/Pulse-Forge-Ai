@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Database, Download, RefreshCw, Search } from "lucide-react";
-import { AuditRun } from "../types";
-import { fetchRecentRuns } from "../services/api";
+import { AuditRun, PersistenceStatus } from "../types";
+import { fetchRecentRunsWithStatus, triggerCloudSync } from "../services/api";
 
 export const AuditTrail: React.FC = () => {
   const [runs, setRuns] = useState<AuditRun[]>([]);
+  const [persistence, setPersistence] = useState<PersistenceStatus | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -12,10 +13,24 @@ export const AuditTrail: React.FC = () => {
   const loadRuns = async () => {
     setLoading(true);
     try {
-      const data = await fetchRecentRuns(50);
-      setRuns(data);
+      const data = await fetchRecentRunsWithStatus(50);
+      setRuns(data.runs);
+      setPersistence(data.persistence);
     } catch (e) {
       console.error("Failed to load audit history:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setLoading(true);
+    try {
+      const synced = await triggerCloudSync();
+      if (synced) setPersistence(synced);
+      const data = await fetchRecentRunsWithStatus(50);
+      setRuns(data.runs);
+      if (data.persistence) setPersistence(data.persistence);
     } finally {
       setLoading(false);
     }
@@ -80,9 +95,22 @@ export const AuditTrail: React.FC = () => {
       <div className="bg-industrial-card border border-industrial-border rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-gray-800 text-gray-300 border border-gray-700">
-              SQLite Audit Engine
+            <span
+              className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold border ${
+                persistence?.mode === "supabase"
+                  ? "bg-emerald-950/70 text-emerald-300 border-emerald-500/40"
+                  : persistence?.mode === "offline_sqlite"
+                  ? "bg-amber-950/70 text-amber-300 border-amber-500/40"
+                  : "bg-gray-800 text-gray-300 border-gray-700"
+              }`}
+            >
+              {persistence?.label || "SQLite Audit Engine"}
             </span>
+            {persistence?.pending_sync_count ? (
+              <span className="text-[11px] font-mono text-amber-300">
+                ({persistence.pending_sync_count} pending sync)
+              </span>
+            ) : null}
             <span className="text-xs font-mono text-gray-400">
               Records: <strong className="text-white">{runs.length}</strong>
             </span>
@@ -94,6 +122,16 @@ export const AuditTrail: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
+          {persistence?.cloud_configured && (
+            <button
+              onClick={handleManualSync}
+              disabled={loading}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-blue-600/20 border border-blue-500/40 text-xs font-medium text-blue-200 hover:bg-blue-600/30 transition"
+            >
+              <Database className="h-3.5 w-3.5" />
+              <span>Sync Supabase</span>
+            </button>
+          )}
           <button
             onClick={loadRuns}
             disabled={loading}

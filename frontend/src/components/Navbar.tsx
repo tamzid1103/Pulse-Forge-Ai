@@ -19,6 +19,7 @@ interface NavbarProps {
   onSelectEquipment: (machineId: string, machineType: MachineType) => void;
   backendOnline: boolean;
   latencyMs: number;
+  persistenceMode?: "supabase" | "offline_sqlite" | "local_only";
   onOpenCopilot: () => void;
 }
 
@@ -30,6 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectEquipment,
   backendOnline,
   latencyMs,
+  persistenceMode,
   onOpenCopilot,
 }) => {
   const machines: { id: string; type: MachineType; label: string }[] = [
@@ -142,22 +144,34 @@ export const Navbar: React.FC<NavbarProps> = ({
             ))}
           </select>
 
-          {/* Backend Health Pill */}
+          {/* Backend & Database Health Pill */}
           <div
             className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono ${
-              backendOnline
+              backendOnline && persistenceMode !== "offline_sqlite"
                 ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-300"
                 : "bg-amber-950/60 border-amber-500/40 text-amber-300"
             }`}
-            title={backendOnline ? `FastAPI Backend online (${latencyMs}ms)` : "Running standalone demo mode"}
+            title={
+              !backendOnline
+                ? "Offline Mode : Operating Locally"
+                : persistenceMode === "offline_sqlite"
+                ? "Offline Mode : Operating Locally (SQLite queue active)"
+                : persistenceMode === "supabase"
+                ? `Connected to Supabase (${latencyMs}ms)`
+                : `Backend online (${latencyMs}ms)`
+            }
           >
-            {backendOnline ? (
+            {backendOnline && persistenceMode !== "offline_sqlite" ? (
               <Wifi className="h-3.5 w-3.5 text-emerald-400" />
             ) : (
               <WifiOff className="h-3.5 w-3.5 text-amber-400" />
             )}
             <span className="hidden sm:inline">
-              {backendOnline ? `${latencyMs}ms` : "Offline SOP"}
+              {!backendOnline || persistenceMode === "offline_sqlite"
+                ? "Offline Mode"
+                : persistenceMode === "supabase"
+                ? `${latencyMs}ms • Cloud`
+                : `${latencyMs}ms`}
             </span>
           </div>
 

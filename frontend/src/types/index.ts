@@ -54,12 +54,25 @@ export interface AnalysisResult {
   timestamp?: string;
 }
 
+export interface PersistenceStatus {
+  cloud_configured: boolean;
+  mode: "supabase" | "offline_sqlite" | "local_only";
+  label: string;
+  is_online: boolean;
+  pending_sync_count: number;
+  last_synced_count: number;
+  total_synced_session?: number;
+  last_checked_at?: string | null;
+  last_error?: string | null;
+}
+
 export interface AnalysisResponse {
   run_id: string;
   machine_id: string;
   filename: string;
   analysis: AnalysisResult;
   processing_ms: number;
+  persistence?: PersistenceStatus;
 }
 
 export interface DemoScenario {
