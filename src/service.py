@@ -92,9 +92,17 @@ class PulseForgeService:
         """Fetch aggregated operational summary stats."""
         return self.store.get_summary_stats()
 
-    def clear_history(self) -> None:
-        """Purge all stored audit records."""
-        self.store.clear_history()
+    def clear_history(self, include_cloud: bool = True) -> None:
+        """Purge stored audit records."""
+        self.store.clear_history(include_cloud=include_cloud)
+
+    def get_persistence_status(self) -> dict[str, Any]:
+        """Return safe cloud/offline database connectivity and sync queue status."""
+        return self.store.get_status()
+
+    def sync_cloud_store(self, force: bool = False) -> dict[str, Any]:
+        """Probe Supabase reachability and flush any pending offline SQLite records."""
+        return self.store.sync_pending_runs(force=force)
 
     def analyze_bytes(
         self,
