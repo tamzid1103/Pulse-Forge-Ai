@@ -11,8 +11,17 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlparse
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 logger = logging.getLogger("pulseforge")
 
@@ -168,6 +177,84 @@ class DecisionConfig:
 
 
 # ---------------------------------------------------------------------------
+# Cloud Persistence / Supabase (Offline-first with SQLite failover)
+# ---------------------------------------------------------------------------
+
+def sanitize_secret_text(value: str | Exception) -> str:
+    """Redact API keys, JWTs, Bearer tokens, and URL credentials from text (CWE-209)."""
+    text = str(value)
+    text = re.sub(r"gsk_[A-Za-z0-9_-]{8,}", "gsk_********************", text)
+    text = re.sub(r"sb_(?:secret|publishable)_[A-Za-z0-9_-]{6,}", "sb_****_[REDACTED]", text)
+    text = re.sub(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]+)?", "[JWT_REDACTED]", text)
+    text = re.sub(r"Bearer\s+[A-Za-z0-9_\-\.]{8,}", "Bearer [REDACTED]", text, flags=re.IGNORECASE)
+    text = re.sub(r"://([^:]+):([^@]+)@", r"://\1:[REDACTED]@", text)
+    return text
+
+
+def validate_supabase_url(raw_url: str | None) -> str | None:
+    """
+    Validate and normalize a Supabase project URL.
+    Requires strict HTTPS scheme with a valid public hostname to prevent SSRF or
+    cleartext credential transmission. Returns None if empty or invalid.
+    """
+    if not raw_url:
+        return None
+    cleaned = raw_url.strip().rstrip("/")
+    if not cleaned or "your-project-ref" in cleaned:
+        return None
+    try:
+        parsed = urlparse(cleaned)
+    except Exception:
+        return None
+    if parsed.scheme != "https" or not parsed.netloc:
+        logger.warning("Ignoring invalid SUPABASE_URL (strict https:// scheme required).")
+        return None
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
+def resolve_supabase_credentials(
+    override_url: str | None = None,
+    override_key: str | None = None,
+    secrets_provider: object | None = None,
+) -> tuple[str | None, str | None]:
+    """
+    Resolve Supabase URL and key cleanly from explicit overrides, environment
+    variables, or an optional Streamlit-like secrets mapping.
+    """
+    raw_url = override_url or os.environ.get("SUPABASE_URL", "").strip()
+    raw_key = override_key or os.environ.get("SUPABASE_KEY", "").strip()
+
+    if (not raw_url or not raw_key) and secrets_provider is not None:
+        try:
+            if not raw_url and "SUPABASE_URL" in secrets_provider:  # type: ignore[operator]
+                raw_url = str(secrets_provider["SUPABASE_URL"]).strip()  # type: ignore[index]
+            if not raw_key and "SUPABASE_KEY" in secrets_provider:  # type: ignore[operator]
+                raw_key = str(secrets_provider["SUPABASE_KEY"]).strip()  # type: ignore[index]
+        except Exception:
+            pass
+
+    norm_url = validate_supabase_url(raw_url)
+    cleaned_key = raw_key.strip() if raw_key and "your_supabase" not in raw_key else None
+    if not norm_url or not cleaned_key:
+        return None, None
+    return norm_url, cleaned_key
+
+
+@dataclass(frozen=True)
+class SupabaseConfig:
+    """Configuration for optional Supabase cloud persistence & offline sync."""
+
+    enabled: bool = field(default_factory=lambda: _env_bool("PULSEFORGE_CLOUD_SYNC", True))
+    timeout_seconds: float = field(
+        default_factory=lambda: max(0.5, min(10.0, _env_float("PULSEFORGE_SUPABASE_TIMEOUT_SEC", 2.0)))
+    )
+    probe_ttl_seconds: float = field(
+        default_factory=lambda: max(2.0, min(120.0, _env_float("PULSEFORGE_SUPABASE_PROBE_TTL_SEC", 15.0)))
+    )
+    table_name: str = "analysis_runs"
+
+
+# ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
@@ -225,6 +312,7 @@ class AppConfig:
     quality: QualityConfig = field(default_factory=QualityConfig)
     decision: DecisionConfig = field(default_factory=DecisionConfig)
     paths: PathConfig = field(default_factory=PathConfig)
+    supabase: SupabaseConfig = field(default_factory=SupabaseConfig)
 
     # Multi-machine industrial fleet support (Milestone M12)
     supported_machine_types: tuple[str, ...] = ("fan", "pump", "valve", "slider")
