@@ -292,6 +292,7 @@ def create_server() -> MCPServer:
 
         return {
             "machine_id": machine_id,
+            "persistence_status": service.get_persistence_status(),
             "monitored_fleet_summary": summary,
             "retrieved_runs_count": len(machine_runs),
             "recent_inspections": machine_runs,

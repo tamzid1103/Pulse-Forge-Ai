@@ -273,10 +273,12 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         """
         svc = get_service()
         model_ready = svc.is_model_ready
+        persistence_state = svc.sync_cloud_store(force=False)
         return {
             "status": "ok" if model_ready else "degraded",
             "model_loaded": model_ready,
             "model_version": "fan-ae-v1",
+            "persistence": persistence_state,
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 
@@ -301,6 +303,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
                 "familiarity_mahalanobis": 9.2549,
             },
             "fleet_summary": svc.get_summary_stats(),
+            "persistence": svc.get_persistence_status(),
             "model_status": svc.get_model_status(),
             "supported_formats": list(svc.config.audio.supported_formats),
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -428,6 +431,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "machine_id": machine_id,
             "filename": filename,
             "analysis": result.to_dict(),
+            "persistence": svc.get_persistence_status(),
         }
         return response
 
@@ -479,6 +483,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "run_id": run_id,
             "scenario": matched,
             "analysis": result.to_dict(),
+            "persistence": svc.get_persistence_status(),
         }
 
     # ---------------------------------------------------------------------------
@@ -490,15 +495,32 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         limit: int = Query(default=50, ge=1, le=500, description="Max records to retrieve"),
     ) -> dict[str, Any]:
         """
-        Retrieves historical acoustic inspection records and aggregated fleet statistics from SQLite.
+        Retrieves historical acoustic inspection records and aggregated fleet statistics.
+        Automatically syncs offline SQLite queue to Supabase when online.
         """
         svc = get_service()
+        persistence_state = svc.sync_cloud_store(force=False)
         runs = svc.get_history(limit=limit, machine_id=machine_id)
         summary = svc.get_summary_stats()
         return {
             "total_returned": len(runs),
             "summary": summary,
+            "persistence": persistence_state,
             "runs": runs,
+        }
+
+    @app.post("/api/v1/runs/sync", tags=["Audit & Persistence"])
+    async def sync_inspection_runs() -> dict[str, Any]:
+        """
+        Probes Supabase reachability and immediately uploads any pending local SQLite
+        records queued during offline operation.
+        """
+        svc = get_service()
+        persistence_state = svc.sync_cloud_store(force=True)
+        return {
+            "status": "synced" if persistence_state.get("is_online") else "offline",
+            "persistence": persistence_state,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 
     @app.get("/api/v1/runs/{run_id}", tags=["Audit & Persistence"])
