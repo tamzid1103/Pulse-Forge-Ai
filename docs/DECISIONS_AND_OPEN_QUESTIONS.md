@@ -368,3 +368,16 @@ Approved by:
 - **Impact on scope:** Completes Milestone M12.
 - **Documents updated:** `src/config.py`, `src/persistence.py`, `src/decision.py`, `src/models/registry.py`, `src/service.py`, `src/copilot.py`, `src/api.py`, `src/mcp_server.py`, `app/dashboard.py`, `frontend/`, `scripts/`, `tests/test_multi_machine.py`, `docs/`.
 - **Approved by:** Tamzidul & Antigravity.
+
+### Decision DEC-017: Hybrid Supabase Postgres Default + Local SQLite Offline-First Failover & Auto-Sync
+- **Date:** 2026-11-27
+- **Question / change:** How should PulseForge AI support cloud-centralized Supabase Postgres persistence by default while guaranteeing zero downtime and zero data loss during plant Wi-Fi/internet outages?
+- **Options considered:**
+  - (A) Local SQLite only (fails to centralize inspection telemetry across operators and cloud hosts).
+  - (B) Supabase Postgres only (crashes or loses inspection records whenever local plant internet drops).
+  - (C) Store-and-Forward Hybrid Outbox (`src/persistence.py`): Use **Supabase Postgres** over strict HTTPS (`httpx` PostgREST with 2.0s probe timeout and 15s probe TTL) as primary storage when online. Always durably write-ahead into embedded **local SQLite** (`sync_status = 'pending'`). On network failure, immediately fail over to SQLite, alert operators with `"Offline Mode : Operating Locally"`, and upon reconnection automatically batch-upsert queued rows idempotently (`on_conflict=id` UUIDv4).
+- **Chosen option:** Option C.
+- **Reason / evidence:** Preserves complete offline plant resilience with zero duplicate records and zero secret leakage (strict `https://` validation, Row-Level Security in `sql/supabase_schema.sql`, `.streamlit/secrets.toml` & `.env` ignored, and token redaction via `sanitize_secret_text()`). Validated by 6 new unit and API tests in `tests/test_persistence_sync.py` (205/205 total tests passing) and Vite/TypeScript production build (`npm run build`).
+- **Impact on scope:** Owner-approved cloud persistence extension recorded as a controlled deviation from SQLite-only MVP (`AGENTS.md` §2/§10).
+- **Documents updated:** `.gitignore`, `.env.example`, `sql/supabase_schema.sql`, `src/config.py`, `src/persistence.py`, `src/service.py`, `src/api.py`, `src/mcp_server.py`, `app/dashboard.py`, `frontend/src/`, `tests/test_persistence_sync.py`, `docs/DATABASE_SCHEMA.md`, `docs/SUPABASE_SETUP_GUIDE.md`, `docs/API_DOCUMENTATION.md`, `docs/SYSTEM_ARCHITECTURE.md`, `docs/IMPLEMENTATION_PLAN.md`, `docs/DECISIONS_AND_OPEN_QUESTIONS.md`.
+- **Approved by:** Tamzidul (Project Owner) & Antigravity.

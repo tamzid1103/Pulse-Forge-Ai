@@ -165,31 +165,12 @@ curl -X POST http://127.0.0.1:8000/api/v1/analyze/scenario/bearing
 ### C. SQLite Audit & Persistence Endpoints
 
 #### `GET /api/v1/runs?limit=50&machine_id=fan_id_00`
-- **Purpose:** Query paginated inspection logs for compliance audits.
-- **Response `200 OK`:**
-```json
-{
-  "total_returned": 2,
-  "summary": {
-    "total_inspections": 2,
-    "status_counts": { "normal": 1, "possible_anomaly": 1 },
-    "average_latency_ms": 13.8
-  },
-  "runs": [
-    {
-      "id": "3c8a14fd-9f82-411a-874b-e7b51b312781",
-      "timestamp": "2026-11-24 06:30:15 UTC",
-      "machine_id": "fan_id_00",
-      "decision_status": "normal",
-      "anomaly_score": 0.00185,
-      "threshold": 0.0032,
-      "rms_level": 0.0345,
-      "clipping_ratio": 0.0,
-      "processing_ms": 14.1
-    }
-  ]
-}
-```
+- **Purpose:** Query paginated inspection logs (from Supabase when online, or local SQLite when `"Offline Mode : Operating Locally"`) and automatically trigger background outbox flush when online.
+- **Response `200 OK`:** Returns `total_returned`, `summary`, `persistence` (`mode`, `label`, `cloud_configured`, `is_online`, `pending_sync_count`, `last_synced_count`), and `runs`.
+
+#### `POST /api/v1/runs/sync`
+- **Purpose:** Immediately probes Supabase reachability and idempotently uploads any locally queued SQLite records (`sync_status='pending'`).
+- **Response `200 OK`:** Returns `status` (`"synced"` | `"offline"`), `persistence`, and `timestamp`.
 
 #### `GET /api/v1/runs/{run_id}`
 - **Response `200 OK`:** Returns full single run metadata or `404 Not Found`.

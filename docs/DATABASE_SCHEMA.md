@@ -1,13 +1,14 @@
 # Database Schema & Metadata Audit Trail
 
-## 1. Storage strategy: Embedded SQLite Audit Store
+## 1. Storage strategy: Hybrid Cloud-First (Supabase) with Local SQLite Failover
 
-In accordance with Milestone M6 and the CloudCamp BD Data Lifecycle standards, PulseForge AI implements an embedded **SQLite metadata audit store** (`src/persistence.py`).
+In accordance with Milestone M6, M12, and Decision `DEC-017`, PulseForge AI implements a **hybrid Store-and-Forward audit store** (`src/persistence.py` + `sql/supabase_schema.sql`):
 
 Key architectural principles:
-- **Zero Configuration:** Embedded local database (`data/analysis_history.db`), requiring zero database server setup.
-- **Privacy & Safety:** Strictly persists **analysis metadata, scores, and timestamps only**. Raw audio is never persisted.
-- **Unified Interface:** Used by the central service (`src/service.py`) and rendered in View 4 of the Streamlit dashboard (`Inspection History & Audit`).
+- **Cloud Default (Online):** When `SUPABASE_URL` and `SUPABASE_KEY` are configured and reachable over strict HTTPS, `analysis_runs` metadata is stored in and queried from **Supabase Postgres**.
+- **Offline Failover (`Offline Mode : Operating Locally`):** Whenever internet or Supabase connectivity drops (network error, timeout > `2.0s`, or 5xx), PulseForge seamlessly operates against embedded **local SQLite** (`data/analysis_history.db`), queueing writes with `sync_status = 'pending'` and surfacing an `"Offline Mode : Operating Locally"` popup notification in both Streamlit and the React SCADA dashboard.
+- **Automatic Reconnect Sync:** Upon connectivity restoration, queued local SQLite rows are idempotently batch-upserted to Supabase (`on_conflict=id` keyed by UUIDv4) and marked `sync_status = 'synced'`, guaranteeing zero duplicates and zero lost runs.
+- **Security & Privacy:** Strictly persists **analysis metadata, scores, and timestamps only** — raw audio is never stored. Row-Level Security (`ENABLE ROW LEVEL SECURITY`) blocks anonymous public table access; server-side credentials reside only in gitignored `.env` or Streamlit Cloud Secrets and are redacted from logs/errors via `sanitize_secret_text()`.
 - **CSV Export:** Includes 1-click CSV export functionality for regulatory compliance and ISO 13374 auditing.
 
 ## 2. Table: `analysis_runs`
@@ -32,6 +33,8 @@ Key architectural principles:
 | `model_version` | TEXT | Yes | Model artifact identifier |
 | `processing_ms` | INTEGER | No | Inference CPU latency in milliseconds |
 | `operator_note` | TEXT | No | Optional operator note or technician comment |
+| `sync_status` | TEXT | Local SQLite only | Outbox queue flag (`synced` or `pending`) used for offline failover |
+| `synced_at` | TEXT | Local SQLite only | UTC timestamp when an offline row uploaded to Supabase |
 
 ### SQL schema (Implemented in `src/persistence.py`)
 

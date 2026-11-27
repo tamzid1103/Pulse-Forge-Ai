@@ -65,7 +65,7 @@ flowchart TD
 | Familiarity checker | Compare feature / embedding representation with training distribution | Features or embedding | Familiarity flag / distance |
 | Decision policy | Combine model score with quality and familiarity flags | Scores and flags | `normal`, `possible_anomaly`, `needs_review`, or `invalid_input` |
 | Explanation builder | Convert measurable signals into cautious text | Result fields | Evidence summary and recommendation |
-| Persistence Store | Store analysis metadata, scores, and decisions in SQLite; support CSV export | Result metadata | Run ID and audit history |
+| Persistence Store | Store analysis metadata, scores, and decisions in Supabase Postgres (default) with automatic SQLite failover & reconnect sync | Result metadata | Run ID, persistence sync status, and audit history |
 | Factory Brain Copilot | Generate OSHA LOTO work orders and answer technician queries via Groq LPU / SOP fallback | Telemetry + SOP docs | Work order JSON/Markdown & Q&A |
 | Presentation Showcase | Executive web showcase with vector machinery blueprint & spectrogram comparison | Browser request | High-level interactive keynote UX |
 
